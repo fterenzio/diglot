@@ -1,0 +1,350 @@
+// Prova completa su Chrome senza finestra: node tests/e2e.mjs (dopo node tools/build.mjs).
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { launch } from "./cdp.mjs";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const APP = pathToFileURL(join(here, "..", "Diglot.html")).href;
+const F = (n) => join(here, "fixtures", n);
+let passed = 0;
+const failures = [];
+function check(name, ok, detail) {
+  if (ok) { passed++; console.log("ok   " + name); }
+  else { failures.push(name); console.log("FAIL " + name + (detail !== undefined ? " · " + JSON.stringify(detail) : "")); }
+}
+
+const b = await launch({ width: 1440, height: 900 });
+const p = await b.open(APP);
+for (let i = 0; i < 60 && !(await p.ev("!!document.querySelector('#load-sample')").catch(() => false)); i++) await b.sleep(150);
+await p.ev("Diglot.Studio.setUiTheme('light')");
+const go = async (hash, wait = 500) => { await p.ev(`location.hash=${JSON.stringify(hash)}`); await b.sleep(wait); };
+
+check("elenco vuoto con invito a iniziare", await p.ev("!!document.querySelector('#load-sample')"), await p.ev("document.querySelector('.page')?.innerText.slice(0,200)"));
+await p.click("#new-conf");
+await b.sleep(150);
+await p.ev(`(()=>{const d=document.querySelector('dialog');d.querySelector('button[type=submit]').click()})()`);
+await b.sleep(150);
+check("titolo obbligatorio per una nuova conferenza", await p.ev("document.querySelector('dialog p.bad')?.hidden===false"));
+await p.ev(`(()=>{const d=document.querySelector('dialog');d.querySelector('.ed.big').value='Prova automatica';d.querySelector('input[type=date]').value='2030-03-04';d.querySelector('button[type=submit]').click()})()`);
+await b.sleep(500);
+const id = (await p.ev("location.hash")).split("/")[2];
+check("nuova conferenza creata", !!id && (await p.ev("document.querySelector('.t-title').value")) === "Prova automatica");
+
+const addTalk = async (speaker) => {
+  await p.ev(`[...document.querySelectorAll('button.add')].find(b=>b.textContent==='Aggiungi un intervento').click()`);
+  await b.sleep(250);
+  await p.ev(`(()=>{const rows=document.querySelectorAll('[data-talk]');const r=rows[rows.length-1].querySelector('.t-speaker');r.value=${JSON.stringify(speaker)};r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('blur'))})()`);
+  await b.sleep(650);
+  return p.ev(`(()=>{const rows=document.querySelectorAll('[data-talk]');return rows[rows.length-1].dataset.talk})()`);
+};
+const t1 = await addTalk("Relatrice Uno");
+const t2 = await addTalk("Relatore Due");
+check("elenco da sistemare segnala il testo mancante", (await p.ev("document.querySelector('.todo').innerText")).includes("manca il testo"));
+
+async function convert(files, expectLayout, expectN) {
+  await go("#/aiuto", 100);
+  await go("#/converti", 300);
+  await p.setFiles("#conv-files", files.map(F));
+  await b.sleep(900);
+  const s = await p.ev("document.getElementById('wiz-summary')?.textContent||document.querySelector('.notice.bad')?.textContent");
+  check("convertitore: " + files.join(" + ") + " riconosciuto come " + expectLayout, (s || "").startsWith(expectLayout) && (expectN === undefined || s.includes(expectN + " schermate")), s);
+}
+await convert(["alternati.docx"], "Paragrafi alternati");
+await convert(["tabella.docx"], "Tabella a due colonne", 5);
+await convert(["sequenza.docx"], "Prima una lingua, poi l'altra", 5);
+await convert(["colonne.pdf"], "Due colonne nel PDF", 10);
+await convert(["solo_de.docx", "solo_it.docx"], "Due file separati", 5);
+await convert(["a_capo.docx"], "Paragrafi alternati");
+await convert(["frasi.docx"], "Frasi alternate");
+await convert(["testo.txt"], "Testo in una sola lingua", 5);
+await p.ev(`(()=>{const s=document.getElementById('wiz-shape');s.value='sequence';s.dispatchEvent(new Event('change',{bubbles:true}))})()`);
+await b.sleep(300);
+check("struttura del file imposta a mano", (await p.ev("document.getElementById('wiz-summary').textContent")).startsWith("Prima una lingua"));
+await convert(["vecchio.json"], "File JSON", 2);
+await convert(["cue.docx"], "Testo in una sola lingua", 5);
+check("indicazioni [Folie N] trovate", (await p.ev("document.getElementById('wiz-summary').textContent")).includes("5 cambi di slide"));
+await convert(["grassetto.docx"], "Testo in una sola lingua", 5);
+check("numeri in grassetto letti come cambi di slide", (await p.ev("document.getElementById('wiz-summary').textContent")).includes("5 cambi di slide"));
+check("intestazione del documento riconosciuta", (await p.ev("document.querySelector('.wiz-result .check')?.textContent||''")).includes("Titel der Rede"));
+
+await go(`#/c/${id}/t/${t1}`);
+await p.setFiles("#text-files", [F("solo_de.docx"), F("solo_it.docx")]);
+await b.sleep(700);
+await p.click("#wiz-apply");
+await b.sleep(500);
+const rows = () => p.ev("document.querySelectorAll('.seg-row[data-i]').length");
+const act = (i, a) => p.ev(`document.querySelector('.seg-row[data-i="${i}"] button[data-act="${a}"]').click()`);
+const cell = (i, c) => p.ev(`document.querySelector('.seg-row[data-i="${i}"] .cell[data-lang="${c}"]').textContent`);
+check("testo caricato nell'intervento", (await rows()) === 5);
+await act(0, "split"); await b.sleep(120);
+check("dividi una schermata", (await rows()) === 6);
+await act(0, "merge"); await b.sleep(120);
+check("unisci due schermate", (await rows()) === 5 && (await cell(0, "it")).startsWith("Il ponte"));
+const before = await cell(1, "it");
+await act(1, "up"); await b.sleep(120);
+check("sposta una frase alla schermata sopra", (await cell(1, "it")) !== before && (await cell(0, "it")).includes("I costruttori"));
+await p.ev("Diglot.Studio.undo()"); await b.sleep(250);
+check("annulla ripristina la frase", (await cell(1, "it")) === before);
+await p.ev(`(()=>{const c=document.querySelector('.seg-row[data-i="0"] .cell[data-lang="it"]');c.textContent='Il ponte corretto.';c.dispatchEvent(new InputEvent('input',{bubbles:true}));c.dispatchEvent(new Event('focusout',{bubbles:true}))})()`);
+await b.sleep(700);
+check("la modifica al testo viene salvata", await p.ev(`(async()=>{const c=await Diglot.Store.getConference(${JSON.stringify(id)});return Diglot.Model.find(c,${JSON.stringify(t1)}).talk.segments[0].text.it==='Il ponte corretto.'})()`));
+await p.ev(`(()=>{const c=document.querySelector('.seg-row[data-i="2"] .cue-field input');c.value='2';c.dispatchEvent(new Event('input',{bubbles:true}));const d=document.querySelector('.seg-row[data-i="0"] .cue-field input');d.value='1';d.dispatchEvent(new Event('input',{bubbles:true}));d.dispatchEvent(new Event('focusout',{bubbles:true}))})()`);
+await b.sleep(650);
+
+await p.click("#open-find"); await b.sleep(100);
+await p.ev(`(()=>{const q=document.getElementById('find-q');q.value='fiume';q.dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('find-r').value='torrente'})()`);
+await p.click("#find-go"); await b.sleep(250);
+check("trova e sostituisci", (await p.ev("document.querySelector('.seg-list').innerText")).includes("torrente"));
+await p.ev("Diglot.Studio.undo()"); await b.sleep(250);
+await p.click("#open-add"); await b.sleep(150);
+await p.setFiles("#addlang-file", [F("testo.txt")]); await b.sleep(600);
+check("nuova lingua proposta sulle schermate esistenti", (await p.ev("document.querySelector('.seg-panel .wiz-sum')?.textContent||''")).includes("5 schermate"));
+await p.ev(`[...document.querySelectorAll('.seg-panel button')].find(b=>b.textContent==='Annulla').click()`); await b.sleep(150);
+
+await go(`#/c/${id}/t/${t1}/slide`);
+await p.setFiles("#deck-files", [F("slide.pdf")]); await b.sleep(1800);
+check("slide da PDF: una per pagina", (await p.ev("document.querySelector('.deck .deck-head').innerText")).includes("3 slide"), await p.ev("document.querySelector('.deck .deck-head').innerText"));
+await p.setFiles("#deck-files", [F("slide.pptx")]); await b.sleep(1800);
+const decks = () => p.ev(`(async()=>{const c=await Diglot.Store.getConference(${JSON.stringify(id)});return Diglot.Model.find(c,${JSON.stringify(t1)}).talk.decks.map(d=>[d.source,d.slides.length,d.warnings.length])})()`);
+const d1 = await decks();
+check("slide da PowerPoint disegnate, grafico segnalato", d1[1] && d1[1][0] === "pptx" && d1[1][1] === 5 && d1[1][2] === 1, d1);
+await p.setFiles("#deck-files", [F("immagine.png")]); await b.sleep(600);
+check("slide da immagini", (await decks())[2][0] === "images");
+check("anteprime delle slide visibili", await p.ev("[...document.querySelectorAll('.thumb img')].some(i=>i.naturalWidth>0)"));
+
+await go(`#/c/${id}/t/${t2}/citazioni`);
+await p.setFiles("#quote-files", [F("alternati.docx")]); await b.sleep(700);
+check("citazioni importate da un file", (await p.ev("document.querySelectorAll('.quote').length")) >= 1);
+await go(`#/c/${id}/t/${t2}/slide`);
+await p.setFiles("#deck-files", [F("slide.pdf")]); await b.sleep(1500);
+
+await go(`#/c/${id}/grafica`, 1300);
+await p.ev(`document.querySelector('[data-preset="ardesia"]').click()`); await b.sleep(400);
+check("anteprima della grafica riceve i colori", await p.ev(`(async()=>{const c=document.getElementById('th-preview');return c&&c.contentWindow?true:false})()`));
+await p.setFiles("#th-logo", [F("immagine.png")]); await b.sleep(500);
+check("logo caricato", await p.ev("!!Diglot.Studio.conf.theme.logo"));
+await p.ev(`document.querySelector('[data-preset="carta"]').click()`); await b.sleep(700);
+
+await go(`#/c/${id}/sala`);
+check("in sala compaiono gli interventi", (await p.ev("document.querySelectorAll('.room-talk').length")) === 2);
+await b.sleep(400);
+
+const scr = await b.open(APP + `#/play?c=${id}&t=${t1}`); await b.sleep(1400);
+const reg = await b.open(APP + `#/play?c=${id}&t=${t1}&mode=regia`); await b.sleep(1400);
+const screenText = () => scr.ev("(document.querySelector('.side-talk .tx')||document.querySelector('.stage .text')||document.querySelector('.stage')).textContent");
+await reg.key("d", "KeyD", 68); await b.sleep(600);
+check("regia manda avanti lo schermo", (await screenText()).startsWith("Il ponte corretto"), await screenText());
+check("slide accanto al testo dal primo cambio", await scr.ev("!!document.querySelector('.side-pass .slf img')?.naturalWidth"));
+await reg.key("d", "KeyD", 68); await reg.key("d", "KeyD", 68); await b.sleep(600);
+check("la slide cambia dove il testo lo indica", (await scr.ev("document.querySelector('.side-pass .lab').textContent")).includes(" 2"));
+await reg.key("m", "KeyM", 77); await b.sleep(500);
+check("M nasconde le slide", !(await scr.ev("!!document.querySelector('.side-pass')")));
+await reg.key("m", "KeyM", 77); await b.sleep(500);
+await reg.key("b", "KeyB", 66); await b.sleep(400);
+check("schermo nero", await scr.ev("document.querySelector('.blackout').classList.contains('on')"));
+await reg.key("b", "KeyB", 66); await b.sleep(300);
+await reg.key("s", "KeyS", 83); await reg.key("x", "KeyX", 88); await b.sleep(500);
+check("foglio unico", await scr.ev("document.querySelector('.screen').classList.contains('sheet-mode')"));
+await reg.key("s", "KeyS", 83); await b.sleep(300);
+await reg.ev("window.__lang('de')"); await b.sleep(600);
+check("lingua sullo schermo cambiata dalla regia", (await screenText()).length > 0 && /[ÄÖÜäöüß]|der|die|das/.test(await screenText()));
+await reg.ev("window.__lang('it')"); await b.sleep(400);
+await reg.key("e", "KeyE", 69); await b.sleep(250);
+await reg.ev("document.getElementById('fx-t').value='Correzione in sala.'"); await reg.ev("document.querySelector('#fixdlg .dd-ok').click()"); await b.sleep(1000);
+check("correzione dalla regia arriva allo schermo", (await screenText()) === "Correzione in sala.", await screenText());
+await reg.key("q", "KeyQ", 81); await b.sleep(250); await reg.key("Enter", "Enter", 13); await b.sleep(500);
+check("discussione sullo schermo", await scr.ev("!!document.querySelector('.stage .cover.disc')"));
+await reg.key("q", "KeyQ", 81); await b.sleep(400);
+await reg.key("g", "KeyG", 71, 8); await b.sleep(300);
+check("Maiusc+G elenca i relatori con materiali", (await reg.ev("document.getElementById('passpanel').innerText")).includes("Relatore Due"));
+await reg.key("Escape", "Escape", 27); await b.sleep(150);
+await reg.ev("document.getElementById('b-theme').focus()"); await reg.key("Enter", "Enter", 13); await b.sleep(250);
+check("Invio su un pulsante attiva il pulsante, non «Avanti»", (await reg.ev("document.documentElement.dataset.theme")) === "dark");
+await reg.ev("document.getElementById('b-theme').click()");
+check("nessun errore in schermo e regia", !scr.errors.length && !reg.errors.length, [scr.errors, reg.errors]);
+
+const coverReg = await b.open(APP + `#/play?c=${id}&t=cover&mode=regia`); await b.sleep(1100);
+await coverReg.key("q", "KeyQ", 81); await b.sleep(250); await coverReg.key("Escape", "Escape", 27); await b.sleep(150);
+await coverReg.key("d", "KeyD", 68); await b.sleep(250);
+check("regia della copertina senza errori", !coverReg.errors.length, coverReg.errors);
+await coverReg.close();
+const regOnly = await b.open(APP + `#/play?c=${id}&t=${t2}&mode=regia`); await b.sleep(1200);
+await regOnly.key("d", "KeyD", 68); await b.sleep(900);
+check("intervento di sole slide: lo schermo cambia intervento e mostra la slide", await scr.ev("!!document.querySelector('.passage.slides .slf img')?.naturalWidth"), await scr.ev("document.querySelector('.stage').innerHTML.slice(0,160)"));
+await regOnly.close(); await scr.close(); await reg.close();
+
+await go("#/");
+const round = await p.ev(`(async()=>{const c=Diglot.Model.normalize(await Diglot.Store.getConference(${JSON.stringify(id)}));const blob=await Diglot.Convert.exportBundle(c);const conf=await Diglot.Convert.importBundle(new File([blob],'x.diglot'));const t=Diglot.Model.find(conf,${JSON.stringify(t1)}).talk;const u=await Diglot.Store.mediaURL(t.decks[0].slides[0].media);const ok=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.naturalWidth>0);i.onerror=()=>r(false);i.src=u});return {segs:t.segments.length,ok,logo:!!conf.theme.logo,sameId:conf.id===c.id}})()`);
+check("esporta e reimporta con le slide", round.segs === 5 && round.ok && round.logo && !round.sameId, round);
+const talkJson = await p.ev(`(async()=>{const c=await Diglot.Store.getConference(${JSON.stringify(id)});const t=Diglot.Model.find(c,${JSON.stringify(t1)}).talk;const j=Diglot.Convert.talkToJSON(t);const back=Diglot.Convert.talkFromJSON(JSON.parse(JSON.stringify(j)));return {n:back.segments.length,it:back.segments[0].text.it,cue:back.segments.filter(s=>s.cue).length,from:back.from}})()`);
+check("JSON dell'intervento: andata e ritorno", talkJson.n === 5 && talkJson.cue === 2 && talkJson.from === "de", talkJson);
+
+// Tutti i controlli restanti, uno per uno.
+await p.ev(`Diglot.download=(blob,name)=>{window.__dl=[name,blob.size]};window.print=()=>{window.__printed=true}`);
+const clickText = (scope, text) => p.ev(`(()=>{const e=[...document.querySelectorAll('${scope} button, ${scope} a, ${scope} label')].find(x=>x.textContent.trim()===${JSON.stringify(text)});if(!e)throw new Error('manca: '+${JSON.stringify(text)});e.click()})()`);
+const dl = async () => { await b.sleep(250); const v = await p.ev("window.__dl"); await p.ev("window.__dl=null"); return v; };
+await go(`#/c/${id}`);
+await clickText(".todo", "Scarica il programma in JSON");
+check("programma scaricato in JSON", ((await dl()) || [""])[0].endsWith(".json"));
+await clickText(".todo", "Esporta per un altro computer");
+await b.sleep(500);
+check("esporta dal programma", ((await dl()) || [""])[0].endsWith(".diglot"));
+const count = (s) => p.ev(`document.querySelectorAll('${s}').length`);
+await clickText(".prog-main", "Aggiungi una sessione"); await b.sleep(200);
+check("aggiungi una sessione", (await count(".session")) === 2);
+await clickText(".prog-main", "Aggiungi una giornata"); await b.sleep(200);
+check("aggiungi una giornata con la data dopo", (await count(".day")) === 2 && (await p.ev("document.querySelectorAll('.day input[type=date]')[1].value")) === "2030-03-05");
+await p.ev(`[...document.querySelectorAll('.day')][1].querySelector('.row-tools .danger').click()`); await b.sleep(200);
+check("togli una giornata", (await count(".day")) === 1);
+await p.ev(`document.querySelector('.toast button').click()`); await b.sleep(250);
+check("annulla dall'avviso", (await count(".day")) === 2);
+await p.ev("Diglot.Studio.undo()"); await b.sleep(200);
+const firstSpeaker = () => p.ev(`document.querySelector('[data-talk] .t-speaker').value`);
+await p.ev(`document.querySelector('[data-talk] button[aria-label="Sposta giù"]').click()`); await b.sleep(200);
+check("sposta un intervento giù", (await firstSpeaker()) === "Relatore Due");
+await p.ev(`(()=>{const rows=document.querySelectorAll('[data-talk]');rows[1].querySelector('button[aria-label="Sposta su"]').click()})()`); await b.sleep(200);
+check("sposta un intervento su", (await firstSpeaker()) === "Relatrice Uno");
+await p.ev(`(()=>{const rows=document.querySelectorAll('[data-talk]');const dt=new DataTransfer();rows[1].dispatchEvent(new DragEvent('dragstart',{bubbles:true,dataTransfer:dt}));rows[0].dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:dt}));rows[0].dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt}))})()`); await b.sleep(250);
+check("trascina un intervento", (await firstSpeaker()) === "Relatore Due");
+await p.ev("Diglot.Studio.undo()"); await b.sleep(250);
+await p.ev(`(()=>{const s=document.querySelector('.lang-line select');s.value='fr';s.dispatchEvent(new Event('change',{bubbles:true}))})()`); await b.sleep(200);
+check("aggiungi una lingua alla conferenza", (await p.ev("document.querySelector('.lang-line').innerText")).includes("Français"));
+await p.ev(`[...document.querySelectorAll('.lang-chip')].find(c=>c.textContent.includes('Français')).querySelector('button').click()`); await b.sleep(200);
+check("togli una lingua dalla conferenza", (await p.ev("document.querySelectorAll('.lang-chip').length")) === 2);
+await p.ev(`document.querySelector('.day-date input').value='2030-03-06'`); await p.ev(`document.querySelector('.day-date input').dispatchEvent(new Event('input',{bubbles:true}))`); await b.sleep(100);
+check("la data aggiorna il giorno scritto", (await p.ev("document.querySelector('.day-label').textContent")).includes("6 marzo"));
+await p.ev(`(()=>{const s=document.querySelector('.talk-lang select');s.value='it';s.dispatchEvent(new Event('change',{bubbles:true}))})()`); await b.sleep(200);
+await p.ev("Diglot.Studio.undo()"); await b.sleep(200);
+
+await go(`#/c/${id}/t/${t1}`);
+await p.ev(`[...document.querySelectorAll('.seg-bar button')].find(b=>b.textContent==='Stampa o PDF').click()`); await b.sleep(150);
+check("stampa del testo", (await p.ev("window.__printed")) && (await p.ev("document.getElementById('print-sheet').innerText")).includes("Correzione in sala"));
+await p.ev("document.getElementById('dl-json').click()");
+check("scarica il JSON dell'intervento", ((await dl()) || [""])[0].endsWith(".json"));
+await act(0, "head"); await b.sleep(120);
+check("segna come titolo", await p.ev(`document.querySelector('.seg-row[data-i="0"]').classList.contains('head')`));
+await p.ev("Diglot.Studio.undo()"); await b.sleep(200);
+await p.ev(`[...document.querySelectorAll('.crumbs a')].find(a=>a.textContent.startsWith('Successivo')).click()`); await b.sleep(400);
+check("passa all'intervento successivo", (await p.ev("document.querySelector('.talk-head h1').textContent")) === "Relatore Due");
+await go(`#/c/${id}/t/${t2}/citazioni`);
+await clickText(".quote:first-of-type", "Aggiungi una pagina"); await b.sleep(150);
+const pages = await count(".quote:first-of-type .quote-page");
+await p.ev(`[...document.querySelectorAll('.quote-page .link.danger')].pop().click()`); await b.sleep(150);
+check("aggiungi e togli una pagina di citazione", pages >= 2);
+const before2 = await count(".quote");
+await p.click("#add-quote"); await b.sleep(150);
+check("aggiungi una citazione", (await count(".quote")) === before2 + 1);
+await p.ev(`[...document.querySelectorAll('.quote-head .danger')].pop().click()`); await b.sleep(150);
+check("togli una citazione", (await count(".quote")) === before2);
+await go(`#/c/${id}/t/${t1}/slide`);
+await clickText(".deck:nth-of-type(n+2)", "Proietta questa serie"); await b.sleep(300);
+check("scegli la serie proiettata", (await p.ev("document.body.innerText")).includes("Serie proiettata"));
+const nDecks = await count(".deck");
+await p.ev(`[...document.querySelectorAll('.deck-head .danger')].pop().click()`); await b.sleep(250);
+check("togli una serie", (await count(".deck")) === nDecks - 1);
+const nThumb = await count(".thumb");
+await p.ev(`document.querySelector('.thumb .danger').click()`); await b.sleep(250);
+check("togli una slide", (await count(".thumb")) === nThumb - 1);
+await p.ev("Diglot.Studio.undo()"); await b.sleep(250);
+
+await go(`#/c/${id}/grafica`, 900);
+await p.setFiles(".th-group input[accept*='woff2']", [join(here, "..", "src", "fonts", "Archivo-2-latin.woff2")]); await b.sleep(500);
+check("carattere caricato e scelto", (await p.ev("Diglot.Studio.conf.theme.fontText")) === "Archivo 2 latin");
+await p.ev(`document.getElementById('th-export').click()`);
+check("grafica esportata", ((await dl()) || [""])[0].startsWith("grafica-"));
+await p.setFiles("#th-import", [F("vecchio.json")]); await b.sleep(250);
+check("JSON sbagliato rifiutato per la grafica", (await p.ev("document.querySelector('.toast.bad span')?.textContent||''")).includes("non è una grafica"));
+await p.ev(`document.querySelector('.toast.bad button').click()`);
+await p.ev(`[...document.querySelectorAll('.th-group .link.danger')].find(b=>b.textContent==="Riporta all'inizio").click()`); await b.sleep(400);
+check("riporta la grafica all'inizio", (await p.ev("Diglot.Studio.conf.theme.fontText")) === "EB Garamond");
+await p.ev("Diglot.Studio.undo()"); await b.sleep(400);
+await p.ev(`[...document.querySelectorAll('.th-group .link.danger')].find(b=>b.textContent==='Togli il logo').click()`); await b.sleep(250);
+check("togli il logo", !(await p.ev("Diglot.Studio.conf.theme.logo")));
+
+const fresh = await b.open(APP + `#/c/${id}/sala`); await b.sleep(1100);
+check("in sala: riprendi l'ultima proiezione", await fresh.ev("document.getElementById('resume').classList.contains('on')"));
+await fresh.close();
+const reg2 = await b.open(APP + `#/play?c=${id}&t=${t1}&mode=regia`); await b.sleep(1200);
+const scale = () => reg2.ev(`JSON.parse(localStorage.getItem('diglot-prefs-${id}')).scale`);
+await reg2.ev("document.getElementById('b-plus').click()"); await b.sleep(100);
+const s1 = await scale();
+await reg2.ev("document.getElementById('b-minus').click()"); await b.sleep(100);
+check("A+ e A− cambiano il testo", s1 > (await scale()));
+await reg2.ev("document.getElementById('rv-bi').click()"); await b.sleep(150);
+check("testo a fronte", await reg2.ev("document.querySelector('.regia').classList.contains('bi')"));
+await reg2.ev("document.querySelector('#bilingual .row[data-i=\"2\"]').click()"); await b.sleep(150);
+check("clic su una riga a fronte", (await reg2.ev("document.getElementById('counter').textContent")).startsWith("2 /"));
+await reg2.ev("document.getElementById('rv-panels').click()"); await b.sleep(100);
+await reg2.ev(`(()=>{const g=document.getElementById('goto');g.value='3';g.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}))})()`); await b.sleep(150);
+check("vai alla schermata", (await reg2.ev("document.getElementById('counter').textContent")).startsWith("3 /"));
+await reg2.ev(`(()=>{const q=document.getElementById('q');q.value='torrente-che-non-esiste';q.dispatchEvent(new Event('input',{bubbles:true}))})()`); await b.sleep(100);
+check("cerca nel testo", (await reg2.ev("[...document.querySelectorAll('.list li')].filter(l=>l.style.display!=='none').length")) === 0);
+await reg2.ev(`(()=>{const q=document.getElementById('q');q.value='';q.dispatchEvent(new Event('input',{bubbles:true}))})()`);
+await reg2.ev("document.getElementById('sv-sheet').click()"); await b.sleep(120);
+await reg2.ev("document.getElementById('sv-slides').click()"); await b.sleep(120);
+await reg2.ev("document.getElementById('b-pass').click()"); await b.sleep(200);
+check("elenco di slide e citazioni", await reg2.ev("document.querySelector('.regia').classList.contains('passopen')"));
+await reg2.ev("document.querySelector('#passpanel .pi').click()"); await b.sleep(250);
+check("proietta dall'elenco", await reg2.ev("document.getElementById('passbar').style.display!=='none'"));
+await reg2.ev("window.__pm('full')"); await b.sleep(120);
+await reg2.ev("window.__pf(1)"); await b.sleep(120);
+await reg2.ev("window.__pj(-1)"); await b.sleep(120);
+await reg2.ev("window.__fx()"); await b.sleep(120);
+check("togli la slide", await reg2.ev("document.getElementById('passbar').style.display==='none'"));
+await reg2.ev("document.getElementById('b-send').click()"); await b.sleep(100);
+await reg2.ev("document.getElementById('b-next').click()"); await b.sleep(100);
+await reg2.ev("document.getElementById('b-prev').click()"); await b.sleep(100);
+await reg2.ev("document.getElementById('b-black').click()"); await b.sleep(100);
+check("pulsante schermo nero", await reg2.ev("document.getElementById('blackbar').style.display!=='none'"));
+await reg2.ev("document.getElementById('b-black').click()"); await b.sleep(100);
+await reg2.ev("document.querySelector('details.keys summary').click()"); await b.sleep(100);
+check("nessun errore nei controlli della regia", !reg2.errors.length, reg2.errors);
+await reg2.close();
+await go(`#/c/${id}/sala`);
+await p.ev(`window.open=(u)=>{window.__opened=u;return null}`);
+await clickText(".room-actions", "Finestra per Teams (16:9)"); await b.sleep(100);
+check("finestra per Teams", (await p.ev("window.__opened")).includes("teams=1"));
+await go("#/");
+await p.ev(`[...document.querySelectorAll('.conf-row button')].find(x=>x.textContent==='Esporta').click()`); await b.sleep(600);
+check("esporta dall'elenco", ((await dl()) || [""])[0].endsWith(".diglot"));
+await p.setFiles("#import-conf", [F("vecchio.leggio")]); await b.sleep(600);
+check("file col vecchio nome ancora importato", (await p.ev("document.querySelector('.t-title')?.value")) === "Conferenza dal primo formato");
+check("JSON col vecchio formato ancora accettato", await p.ev(`Diglot.Convert.conferenceFromJSON({format:'leggio.conference',title:{it:'Prova'},languages:['it'],days:[]}).format==='diglot.conference'`));
+await go("#/");
+await p.setFiles("#import-conf", [F("vecchio.conferenza")]); await b.sleep(600);
+check("file col secondo nome ancora importato", (await p.ev("document.querySelector('.t-title')?.value")) === "Conferenza dal secondo formato");
+await go("#/");
+await p.ev(`localStorage.setItem('conferenze-prefs-prova','recente'); localStorage.setItem('leggio-prefs-prova','vecchio'); localStorage.setItem('leggio-pos-prova','3')`);
+const later = await b.open(APP); await b.sleep(700);
+check("preferenze dei nomi precedenti conservate", await later.ev(`localStorage.getItem('diglot-prefs-prova')==='recente' && localStorage.getItem('diglot-pos-prova')==='3' && !Object.keys(localStorage).some((k)=>/^(conferenze|leggio)-/.test(k))`));
+await later.close();
+await p.setFiles("#import-conf", [F("vecchio.json")]); await b.sleep(300);
+check("file sbagliato rifiutato all'importazione", (await p.ev("document.querySelector('.toast.bad span')?.textContent||''")).includes("non descrive una conferenza"));
+await p.ev(`document.querySelector('.toast.bad button').click()`);
+
+const wide = async (label) => {
+  const r = await p.ev(`(()=>{const w=innerWidth;const over=document.documentElement.scrollWidth-w;let who=[];if(over>0){document.querySelectorAll('body *').forEach(e=>{const b=e.getBoundingClientRect();if(b.right>w+1&&who.length<4&&b.width>0&&getComputedStyle(e).position!=='fixed')who.push(e.tagName+'.'+e.className)})}return {over,who}})()`);
+  check("nessuno sbordo a " + label, r.over <= 0, r);
+};
+for (const [dark, mode] of [[false, "chiaro"], [true, "scuro"]]) {
+  await p.ev(`Diglot.Studio.setUiTheme('${dark ? "dark" : "light"}')`);
+  for (const [w, h] of [[375, 780], [1024, 768]]) {
+    await p.size(w, h);
+    for (const [hash, name] of [["#/", "elenco"], [`#/c/${id}`, "programma"], [`#/c/${id}/t/${t1}`, "testo"], [`#/c/${id}/t/${t1}/slide`, "slide"], [`#/c/${id}/t/${t2}/citazioni`, "citazioni"], [`#/c/${id}/grafica`, "grafica"], [`#/c/${id}/sala`, "sala"], ["#/converti", "convertitore"], ["#/aiuto", "aiuto"]]) {
+      await go(hash, 350);
+      await wide(`${w}px, ${mode}: ${name}`);
+    }
+  }
+}
+await p.size(375, 780);
+const narrow = await b.open(APP + `#/play?c=${id}&t=${t1}&mode=regia`);
+await narrow.size(375, 780); await b.sleep(1200);
+const nr = await narrow.ev("document.documentElement.scrollWidth-innerWidth");
+check("regia a 375px senza sbordi", nr <= 0, nr);
+await narrow.close();
+
+check("nessun errore nella progettazione", !p.errors.length && !p.logs.length, [p.errors, p.logs]);
+console.log(`\n${passed} ok, ${failures.length} falliti`);
+if (failures.length) console.log(failures.join("\n"));
+await b.stop();
+process.exit(failures.length ? 1 : 0);

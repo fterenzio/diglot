@@ -1,0 +1,170 @@
+/* Regia: il portatile di chi manda avanti il testo. Il testo che il relatore legge è il centro della pagina. */
+.regia { font-family: var(--font-label); display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: 100vh; height: 100vh; }
+.regia main { padding: 0 28px 20px; overflow: auto; display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.regia button { font-family: var(--font-label); cursor: pointer; color: var(--ink); }
+
+.regia .rtop { position: sticky; top: 0; z-index: 5; background: var(--paper); display: flex; align-items: center; gap: 16px; padding: 14px 0 12px; border-bottom: 1px solid var(--rule); }
+.regia .rtop .back { color: var(--ink); text-decoration: none; font-size: 13px; border: 1px solid var(--rule); border-radius: 5px; padding: 6px 10px; white-space: nowrap; }
+.regia .rtop .back:hover { border-color: var(--ink); }
+.regia .rtop .who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.regia .rtop .who b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.regia .rtop .who span { font-size: 12.5px; color: var(--ink-soft); }
+.regia .status { font-size: 12.5px; font-weight: 600; padding: 6px 11px; border: 1px solid var(--rule); border-radius: 5px; background: var(--paper-2); white-space: nowrap; }
+.regia .status.pass { border-color: var(--accent); background: var(--accent-tint); }
+.regia .status.black { background: #111; border-color: #111; color: #fff; }
+.regia .clock { font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.regia .counter { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.regia .counter b { font-size: 26px; font-weight: 600; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.regia .counter span { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
+.regia .otherbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; border: 2px solid var(--warn); border-radius: 6px; padding: 10px 14px; font-size: 14px; background: var(--paper); }
+.regia .otherbar button { font-size: 14px; font-weight: 600; padding: 8px 12px; border: 0; border-radius: 6px; background: var(--ink); color: var(--paper); }
+.regia .status.other { border-color: var(--warn); color: var(--warn); background: var(--paper); }
+.regia .blackbar { background: #111; color: #fff; border-radius: 6px; padding: 11px 16px; font-size: 14px; }
+.regia .blackbar kbd { background: #333; color: #fff; border-color: #555; }
+.regia .missbar { border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; padding: 8px 14px; font-size: 13px; }
+
+#panels { display: contents; }
+.regia .box { border: 1px solid var(--rule); border-radius: 8px; padding: 14px 18px; background: var(--paper); }
+.regia .box h4 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+.regia .box .o { font-family: var(--font-text); font-size: 26px; line-height: 1.35; }
+.regia .box.cur { border: 2px solid var(--accent); }
+.regia .box.cur h4 { color: var(--accent-ink); }
+.regia .box.next .o { font-size: 19px; color: var(--ink-soft); }
+
+.regia .transport { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.regia .tbtn { font-size: 16px; padding: 14px 20px; border: 1px solid var(--ink); border-radius: 8px; background: var(--paper); }
+.regia .tbtn:hover { background: var(--paper-2); }
+.regia .tbtn.primary { flex: 1; max-width: 380px; font-size: 20px; font-weight: 600; background: var(--ink); color: var(--paper); }
+.regia .tbtn.primary:hover { opacity: .88; }
+.regia .goto { margin-left: auto; font-size: 13px; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; }
+.regia .goto input { width: 80px; font: inherit; font-size: 15px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); }
+
+.regia .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: 14px; border-top: 1px solid var(--rule); }
+.regia .seg { display: inline-flex; align-items: stretch; border: 1px solid var(--ink); border-radius: 6px; overflow: hidden; }
+.regia .seg > span { display: flex; align-items: center; padding: 0 10px; font-size: 11.5px; font-weight: 600; color: var(--ink-soft); background: var(--paper-2); border-right: 1px solid var(--rule); }
+.regia .seg button { border: 0; border-left: 1px solid var(--rule); background: var(--paper); padding: 8px 12px; font-size: 13px; }
+.regia .seg > span + button { border-left: 0; }
+.regia .seg button:hover { background: var(--paper-2); }
+.regia .seg button.on { background: var(--ink); color: var(--paper); }
+.regia .seg button.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
+.regia .tool { font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+.regia .tool:hover { border-color: var(--ink); }
+.regia .tool:disabled { opacity: .5; cursor: not-allowed; }
+.regia #b-disc.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.regia #b-disc.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
+.regia #b-black.on { background: #111; border-color: #111; color: #fff; }
+.regia #b-black.on kbd { background: #333; color: #fff; border-color: #555; }
+.regia .sizes { display: inline-flex; gap: 4px; }
+.regia .rtop .send { border-color: var(--accent); white-space: nowrap; }
+
+.regia details.keys { font-size: 13px; color: var(--ink-soft); }
+.regia details.keys summary { cursor: pointer; padding: 6px 0; font-weight: 600; color: var(--ink); }
+.regia details.keys dl { display: grid; grid-template-columns: max-content 1fr max-content 1fr; gap: 6px 14px; margin: 8px 0; }
+.regia details.keys dt { text-align: right; }
+.regia details.keys dd { margin: 0; }
+
+.regia aside { border-left: 1px solid var(--rule); background: var(--paper-2); display: flex; flex-direction: column; min-height: 0; }
+.regia .pv-wrap { padding: 14px 14px 12px; border-bottom: 1px solid var(--rule); }
+.regia .pv-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.regia .pv-head span:last-child { color: var(--ink-soft); font-weight: 400; }
+.regia .pv-frame { position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--paper); }
+.regia .pv-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.regia .search { padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.regia .search input { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.regia .list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; }
+.regia .list li { padding: 8px 14px; border-bottom: 1px solid var(--rule); font-size: 13px; line-height: 1.4; cursor: pointer; display: grid; grid-template-columns: 34px 1fr; gap: 6px; }
+.regia .list li:hover { background: var(--paper); }
+.regia .list li span { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.regia .list li.h { font-weight: 600; color: var(--accent-ink); }
+.regia .list li.cur { background: var(--ink); color: var(--paper); }
+.regia .list li.cur span { color: var(--paper); }
+.regia .slide-tag { font-family: var(--font-label); font-size: .78em; font-weight: 600; color: var(--accent-ink); margin-right: .3em; }
+.regia .list li.cur .slide-tag { color: var(--paper); }
+
+.regia .bilingual { display: none; }
+.regia.bi { grid-template-columns: minmax(0, 1fr) 340px; }
+.regia.bi aside .search, .regia.bi aside .list { display: none; }
+.regia.bi main { overflow: hidden; padding-bottom: 14px; }
+.regia.bi #panels .box { display: none; }
+.regia.bi .bilingual { display: block; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 40vh; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.regia.bi details.keys { display: none; }
+.bilingual .row { display: grid; grid-template-columns: 34px 1fr 1fr; gap: 0 22px; padding: 10px 12px; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.bilingual .row:hover { background: var(--paper-2); }
+.bilingual .row .n { font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; padding-top: 4px; }
+.bilingual .row .o { font-family: var(--font-text); font-size: 21px; line-height: 1.4; color: var(--ink); }
+.bilingual .row .t { font-family: var(--font-text); font-size: 17px; line-height: 1.4; color: var(--ink-soft); }
+.bilingual .row.past .o { color: var(--ink-soft); }
+.bilingual .row.cur { background: var(--accent-tint); box-shadow: inset 4px 0 0 var(--accent); }
+.bilingual .row.cur .t { color: var(--ink); }
+.bilingual .row.h .o, .bilingual .row.h .t { font-family: var(--font-label); font-weight: 600; color: var(--accent-ink); font-size: 14px; }
+.bilingual .row.meta .o { font-family: var(--font-label); font-size: 13px; color: var(--ink-soft); }
+.bilingual .row.head { position: sticky; top: 0; z-index: 1; background: var(--paper-2); cursor: default; font-size: 12px; font-weight: 600; color: var(--ink-soft); grid-template-columns: 1fr 1fr; padding-left: 68px; }
+
+.regia .passbar { border: 2px solid var(--accent); border-radius: 8px; padding: 14px 16px; background: var(--accent-tint); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.regia .passbar .pb-title { font-size: 14px; line-height: 1.4; }
+.regia .passbar .pb-title .pg { color: var(--ink-soft); white-space: nowrap; }
+.regia .passbar .pv { font-family: var(--font-text); font-size: 17px; line-height: 1.4; margin-top: 6px; color: var(--ink-soft); max-height: 2.9em; overflow: hidden; }
+.regia .passbar .pb-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.regia .passbar .seg button { padding: 6px 10px; font-size: 12.5px; }
+.regia .passbar .hint { font-size: 12.5px; color: var(--ink-soft); margin: 10px 0 0; }
+.regia .passbar .pbtn { display: flex; flex-direction: column; gap: 8px; }
+.regia .passbar .pbtn .row { display: flex; gap: 6px; }
+.regia .passbar .pbtn button { font-size: 14px; padding: 9px 12px; border: 1px solid var(--ink); background: var(--paper); border-radius: 6px; }
+.regia .passbar .pbtn button:hover { background: var(--paper-2); }
+.regia .passbar .pbtn button.big { background: var(--ink); color: var(--paper); }
+.regia .passbar .pbtn button.big kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
+.regia .passbar .thumb { width: 150px; border: 1px solid var(--rule); background: #fff; display: block; margin-top: 8px; }
+
+.regia .passpanel { display: none; position: fixed; right: 0; top: 0; bottom: 0; width: min(520px, 100vw); background: var(--paper-2); border-left: 2px solid var(--accent); overflow-y: auto; z-index: 20; box-shadow: -8px 0 24px rgba(0,0,0,.15); }
+.regia.passopen .passpanel { display: block; }
+.regia .passpanel .pphead { position: sticky; top: 0; background: var(--paper-2); padding: 14px 16px; border-bottom: 1px solid var(--rule); display: flex; gap: 10px; align-items: baseline; z-index: 1; }
+.regia .passpanel .pphead span { font-size: 12px; color: var(--ink-soft); flex: 1; }
+.regia .passpanel .ppnum { font-size: 14px; color: var(--accent-ink); white-space: nowrap; }
+.regia .passpanel .pphead button { padding: 6px 10px; border: 1px solid var(--ink); background: var(--paper); border-radius: 5px; }
+.regia .passpanel .ppback { margin-right: 6px; }
+.regia .passpanel .pgroup { font-size: 12px; font-weight: 600; color: var(--accent-ink); padding: 10px 16px 6px; background: var(--paper); border-bottom: 1px solid var(--rule); }
+.regia .passpanel .pi { padding: 12px 16px; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.regia .passpanel .pi:hover { background: var(--paper); }
+.regia .passpanel .pi.cur { background: var(--ink); color: var(--paper); }
+.regia .passpanel .pi .ref { font-weight: 600; font-size: 13px; }
+.regia .passpanel .pi .ex { font-family: var(--font-text); font-size: 15px; margin-top: 4px; opacity: .85; }
+.regia .passpanel .pi img { width: 150px; display: block; margin-top: 6px; border: 1px solid var(--rule); background: #fff; }
+.regia .passpanel .none { padding: 16px; color: var(--ink-soft); font-size: 14px; }
+
+@media (max-width: 1000px) {
+  .regia, .regia.bi { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
+  .regia main { overflow: visible; padding: 0 16px 16px; }
+  .regia .rtop { flex-wrap: wrap; }
+  .regia aside { border-left: 0; border-top: 1px solid var(--rule); }
+  .regia .list { max-height: 50vh; }
+  .regia details.keys dl { grid-template-columns: max-content 1fr; }
+  .regia .passbar { grid-template-columns: 1fr; }
+  .regia button { min-height: 44px; }
+  .bilingual .row { grid-template-columns: 28px 1fr; }
+  .bilingual .row .t { grid-column: 2; margin-top: 6px; }
+  .bilingual .row.head { grid-template-columns: 1fr; padding-left: 12px; }
+}
+
+.regia .discdlg, .regia .fixdlg { display: none; position: fixed; inset: 0; z-index: 30; background: rgba(20, 16, 12, .45); align-items: center; justify-content: center; padding: 24px; }
+.regia .discdlg.on, .regia .fixdlg.on { display: flex; }
+.regia .dd-box { background: var(--paper); border-radius: 10px; width: min(620px, 100%); max-height: 100%; display: flex; flex-direction: column; box-shadow: 0 16px 48px rgba(0,0,0,.3); }
+.regia .fixdlg .dd-box { width: min(860px, 100%); }
+.regia .dd-box h3 { font-family: var(--font-text); font-weight: 400; font-size: 24px; margin: 0; padding: 18px 20px 4px; }
+.regia .dd-help { font-size: 13px; color: var(--ink-soft); margin: 0; padding: 0 20px 12px; }
+.regia .dd-list { overflow-y: auto; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.regia .dd-group { font-size: 12px; font-weight: 600; color: var(--accent-ink); padding: 10px 20px 4px; background: var(--paper-2); }
+.regia .dd-row { display: grid; grid-template-columns: 22px 22px 1fr; gap: 10px; align-items: start; padding: 10px 20px; border-top: 1px solid var(--rule); cursor: pointer; }
+.regia .dd-row:hover { background: var(--paper-2); }
+.regia .dd-row input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--ink); }
+.regia .dd-n { font-size: 13px; font-weight: 600; color: var(--ink-soft); padding-top: 2px; }
+.regia .dd-row b { font-size: 15px; }
+.regia .dd-row small { font-size: 12px; color: var(--ink-soft); margin-left: 6px; }
+.regia .dd-row em { display: block; font-family: var(--font-text); font-size: 15px; color: var(--ink-soft); margin-top: 2px; }
+.regia .dd-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; }
+.regia .dd-actions button { font-size: 15px; padding: 10px 16px; border-radius: 6px; border: 1px solid var(--ink); background: var(--paper); }
+.regia .dd-actions .dd-ok { background: var(--ink); color: var(--paper); font-weight: 600; }
+.regia .fix-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 20px 12px; }
+.regia .fix-fields label { font-size: 12px; font-weight: 600; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+.regia .fix-fields textarea { font-family: var(--font-text); font-size: 18px; line-height: 1.35; min-height: 170px; padding: 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); resize: vertical; }
+@media (max-width: 760px) { .regia .fix-fields { grid-template-columns: 1fr; } }

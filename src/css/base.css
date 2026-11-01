@@ -1,0 +1,39 @@
+/* Direzione in DESIGN.md: il programma stampato di un convegno. Carta, inchiostro, un accento.
+   --accent è per filetti e barre; il testo piccolo usa --accent-ink, che regge il contrasto AA sulla carta. */
+:root {
+  --paper: #f2ebdd;
+  --paper-2: #e9e0cd;
+  --ink: #2a2420;
+  --ink-soft: #5d544b;
+  --accent: #b48a4e;
+  --accent-ink: #755426;
+  --accent-tint: #e9dcc2;
+  --rule: #cbbd9f;
+  --ok: #3f6b2e;
+  --warn: #8f4420;
+  --font-text: "EB Garamond", "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  --font-label: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --text-lh: 1.32;
+  --text-align: left;
+  --stage-margin: 7vw;
+  --bar-case: uppercase;
+  --bar-track: .1em;
+  --side-cols: 42fr 58fr;
+}
+:root[data-theme="dark"] {
+  --paper: #241f1b;
+  --paper-2: #2e2823;
+  --ink: #f1e9da;
+  --ink-soft: #b9ad9b;
+  --accent: #d0a868;
+  --accent-ink: #dcb77c;
+  --accent-tint: #3d3226;
+  --rule: #4a4036;
+  --ok: #9cc47f;
+  --warn: #e39a72;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-text); }
+:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+kbd { font-family: var(--font-label); font-size: .85em; font-weight: 600; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 .4em; background: var(--paper); color: var(--ink); white-space: nowrap; }
