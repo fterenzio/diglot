@@ -293,6 +293,7 @@
     const th = conf.theme || {};
     if (th.logo && map[th.logo.media]) th.logo.media = map[th.logo.media];
     if (th.coverBg && map[th.coverBg.media]) th.coverBg.media = map[th.coverBg.media];
+    if (th.poster && map[th.poster.media]) th.poster.media = map[th.poster.media];
     (th.fonts || []).forEach((f) => { if (map[f.media]) f.media = map[f.media]; });
   }
 
@@ -323,7 +324,7 @@
     const conf = M.normalize(data);
     conf.id = L.uid("c");
     M.eachTalk(conf, (t) => { t.decks = []; t.deck = null; });
-    conf.theme.logo = null; conf.theme.coverBg = null; conf.theme.fonts = [];
+    conf.theme.logo = null; conf.theme.coverBg = null; conf.theme.poster = null; conf.theme.fonts = [];
     return conf;
   }
 

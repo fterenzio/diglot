@@ -144,6 +144,11 @@
         (t2 ? '<div class="t2">' + esc(t2) + "</div>" : "") +
         '<div class="meta">' + esc(end ? M.label(sl, "end") : t.segments.length ? screenTag() : "") + "</div></div>";
     }
+    function posterHTML(pos) {
+      const url = Store.cachedURL(pos.media);
+      if (!url) Store.mediaURL(pos.media).then((u) => { if (u) render(); });
+      return '<figure class="poster"><img src="' + esc(url) + '" alt="Locandina"></figure>';
+    }
     function confHTML() {
       const langs = conf.languages;
       const kicker = langs.map((c) => conf.kicker[c]).filter(Boolean).join(" · ");
@@ -152,8 +157,23 @@
       let body;
       if (conf.big) body = titles.map((x, i) => '<div class="' + (i ? "pre2" : "pre") + '">' + esc(x) + "</div>").join("") + '<div class="big">' + esc(conf.big) + "</div>";
       else body = titles.map((x, i) => '<div class="' + (i ? "pre2" : "lead") + '">' + esc(x) + "</div>").join("");
-      return '<div class="cover conf">' + (kicker ? '<div class="kicker">' + esc(kicker) + "</div>" : "") + body + '<div class="rule"></div>' +
+      const text = '<div class="cover conf">' + (kicker ? '<div class="kicker">' + esc(kicker) + "</div>" : "") + body + '<div class="rule"></div>' +
         (where ? '<div class="meta" style="margin-top:0">' + esc(where) + "</div>" : "") + "</div>";
+      const pos = conf.theme.poster;
+      if (!pos || !pos.media) return text;
+      return pos.show === "alone" ? posterHTML(pos) : '<div class="conf-poster">' + text + posterHTML(pos) + "</div>";
+    }
+    function renderConf() {
+      const stage = document.querySelector(".stage");
+      document.querySelector(".bar").style.visibility = "hidden";
+      document.querySelector(".foot").style.visibility = "hidden";
+      stage.dataset.key = "";
+      stage.innerHTML = confHTML();
+      // Accanto alla locandina il titolo ha meno spazio: si riduce quanto basta.
+      const text = stage.querySelector(".conf-poster .cover");
+      if (!text) return;
+      let k = 1;
+      while ((text.scrollHeight > stage.clientHeight || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
     }
 
     function textBase(frac) { return window.innerHeight * frac * state.scale * (conf.theme.size || 1); }
@@ -353,23 +373,24 @@
       applyDecor(scr);
       scr.classList.toggle("sheet-mode", sheetMode);
       document.querySelector(".blackout").classList.toggle("on", state.black);
-      const cp = curPass();
-      scr.classList.toggle("disc-mode", !!state.disc && !cp);
+      const onScene = state.scene === "conf", cp = onScene ? null : curPass();
+      scr.classList.toggle("disc-mode", !onScene && !!state.disc && !cp);
       scr.classList.toggle("pass-mode", !!cp);
       scr.classList.toggle("side-mode", !!cp && !isFull(state.passMode));
       const sl = slides[state.i] || slides[0];
-      const isCover = state.scene === "conf" || (!cp && !sheetMode && (state.disc || sl.type === "cover" || sl.type === "conf"));
+      const isCover = onScene || (!cp && !sheetMode && (state.disc || sl.type === "cover" || sl.type === "conf"));
       scr.classList.toggle("on-cover", !!isCover);
-      if (state.scene === "conf") { const b = document.querySelector(".bar"); b.style.visibility = "hidden"; document.querySelector(".foot").style.visibility = "hidden"; const st = document.querySelector(".stage"); st.dataset.key = ""; st.innerHTML = confHTML(); return; }
+      const onConf = onScene || (sl.type === "conf" && !cp && !state.disc), pos = onConf && conf.theme.poster && conf.theme.poster.media ? conf.theme.poster : null;
+      scr.classList.toggle("poster-beside", !!pos && pos.show !== "alone");
+      scr.classList.toggle("poster-alone", !!pos && pos.show === "alone");
+      if (pos) scr.style.setProperty("--poster-r", (pos.w || 7) / (pos.h || 10));
+      document.querySelector(".stage").classList.remove("disc-top");
+      if (onConf) { renderConf(); return; }
       if (state.disc && !cp) { renderDiscussion(); return; }
-      if (cp && !isFull(state.passMode)) { renderSide(cp); return; }
+      if (cp && info && !isFull(state.passMode)) { renderSide(cp); return; }
       if (cp) { renderPassage(cp); return; }
       if (sheetMode) { renderSheet(); return; }
       const bar = document.querySelector(".bar"), stage = document.querySelector(".stage"), prog = document.querySelector(".foot i");
-      if (sl.type === "conf") {
-        bar.style.visibility = "hidden"; stage.dataset.key = ""; stage.innerHTML = confHTML(); prog.parentNode.style.visibility = "hidden";
-        return;
-      }
       bar.style.visibility = sl.type === "cover" ? "hidden" : "visible";
       prog.parentNode.style.visibility = sl.type === "cover" ? "hidden" : "visible";
       bar.innerHTML = barHTML();
@@ -380,16 +401,18 @@
       fit(stage.firstChild, stage);
     }
 
-    let startTime = null, regiaScrollLock = false, screenTalk = null;
+    let startTime = null, regiaScrollLock = false, screenTalk = null, screenScene = null;
     let regiaBi = store(BI) === "1", biScrolled = false;
     let passOpen = false, passScope = null, passBuf = "", passTmo = null, passIndex = [], discOpen = false, fixOpen = false;
 
     function statusText(other, cpS) {
       if (other) return "Schermo su un altro intervento";
       if (state.black) return "Schermo nero";
+      if (state.scene === "conf") return "Copertina della conferenza";
       const what = (c) => (c.p.kind === "slide" ? "slide" : "citazione") + (isFull(state.passMode) ? " a tutto schermo" : " accanto al testo");
       if (state.disc) return "Discussione · " + (cpS ? what(cpS) : discIds().length + (discIds().length === 1 ? " relatore" : " relatori"));
       if (cpS) return what(cpS).charAt(0).toUpperCase() + what(cpS).slice(1);
+      if (talkId === "cover") return "Copertina della conferenza";
       return state.view === "sheet" ? "Testo · foglio unico" : "Testo · a schermate";
     }
     const segH = (label, items, cur, fn) => '<div class="seg" role="group" aria-label="' + label + '"><span>' + label + "</span>" + items.map((m) =>
@@ -418,19 +441,22 @@
       document.getElementById("b-black").setAttribute("aria-pressed", state.black);
       document.getElementById("b-disc").classList.toggle("on", !!state.disc);
       document.getElementById("b-disc").setAttribute("aria-pressed", !!state.disc);
+      const bc = document.getElementById("b-cover");
+      if (bc) { bc.classList.toggle("on", state.scene === "conf"); bc.setAttribute("aria-pressed", state.scene === "conf"); }
       const other = screenTalk && screenTalk !== talkId, ob = document.getElementById("otherbar");
       ob.style.display = other ? "" : "none";
       if (other) {
         const ot = screenTalk === "cover" ? null : findTalk(screenTalk);
-        ob.innerHTML = "<span>Sullo schermo c'è ancora <b>" + esc(ot ? ot.talk.speaker : screenTalk === "cover" ? "la copertina della conferenza" : screenTalk) + "</b>. Questo intervento comparirà al primo «Avanti».</span>" +
+        ob.innerHTML = "<span>Sullo schermo c'è ancora <b>" + esc(screenScene === "conf" || screenTalk === "cover" ? "la copertina della conferenza" : ot ? ot.talk.speaker : screenTalk) + "</b>. Questo intervento comparirà al primo «Avanti».</span>" +
           '<button onclick="window.__send()">Porta questo intervento sullo schermo</button>';
       }
       document.getElementById("blackbar").style.display = state.black && !other ? "" : "none";
+      document.getElementById("coverbar").style.display = state.scene === "conf" && !state.black && !other ? "" : "none";
       [["sv-slides", state.view === "slides"], ["sv-sheet", state.view === "sheet"], ["rv-panels", !regiaBi], ["rv-bi", regiaBi]].forEach((x) => {
         const b = document.getElementById(x[0]); b.classList.toggle("on", x[1]); b.setAttribute("aria-pressed", x[1]);
       });
       const cpS = curPass(), st = document.getElementById("status");
-      st.className = "status" + (other ? " other" : state.black ? " black" : state.disc || cpS ? " pass" : "");
+      st.className = "status" + (other ? " other" : state.black ? " black" : state.scene === "conf" || state.disc || cpS ? " pass" : "");
       st.textContent = statusText(other, cpS);
       document.getElementById("pv-state").textContent = st.textContent;
       document.querySelector(".regia").classList.toggle("bi", regiaBi);
@@ -478,7 +504,7 @@
       if (cur && !regiaScrollLock && !regiaBi) listBox.scrollTop = cur.offsetTop - listBox.offsetTop - listBox.clientHeight / 2;
     }
 
-    window.__send = () => { broadcast(); render(); };
+    window.__send = () => { state.scene = null; broadcast(); render(); };
     window.__fx = () => closePass();
     window.__pall = () => { passScope = "all"; passBuf = ""; buildPassPanel(); };
     window.__tp = () => togglePassPanel();
@@ -589,8 +615,8 @@
     function rememberPos(t, i) { store(POS(t), JSON.stringify({ i, ts: Date.now() })); }
     function broadcast() {
       if (preview) return;
-      rememberPos(talkId, state.i); screenTalk = talkId;
-      const msg = { t: talkId, i: state.i, disc: state.disc, pass: state.pass, passMode: state.passMode, passView: state.passView, slidesOff: state.slidesOff, lang: state.lang, deck: state.deck, black: state.black, theme: state.theme, scale: state.scale, view: state.view, ts: Math.max(Date.now(), lastTs + 1), src: me };
+      rememberPos(talkId, state.i); screenTalk = talkId; screenScene = state.scene;
+      const msg = { t: talkId, i: state.i, scene: state.scene, disc: state.disc, pass: state.pass, passMode: state.passMode, passView: state.passView, slidesOff: state.slidesOff, lang: state.lang, deck: state.deck, black: state.black, theme: state.theme, scale: state.scale, view: state.view, ts: Math.max(Date.now(), lastTs + 1), src: me };
       lastTs = msg.ts;
       store(KEY, JSON.stringify(msg));
       try { if (bc) bc.postMessage(msg); } catch (e) { /* restano localStorage e postMessage */ }
@@ -608,12 +634,19 @@
     function apply(msg) {
       if (!msg || msg.src === me || !(msg.ts > lastTs)) return;
       lastTs = msg.ts;
-      if (mode === "regia" && msg.t !== screenTalk) { screenTalk = msg.t; render(); }
-      if (msg.t !== talkId) { if (mode === "screen") gotoTalk(msg.t, msg.i); return; }
+      if (mode === "regia" && (msg.t !== screenTalk || (msg.scene || null) !== screenScene)) { screenTalk = msg.t; screenScene = msg.scene || null; render(); }
+      if (msg.t !== talkId) {
+        if (mode !== "screen") return;
+        // La copertina non dipende dall'intervento: lo schermo la mostra senza ricaricarsi.
+        if (msg.scene === "conf") { state.scene = "conf"; state.black = !!msg.black; state.theme = msg.theme || state.theme; render(); return; }
+        gotoTalk(msg.t, msg.i);
+        return;
+      }
       const relang = (msg.lang || null) !== state.lang || (msg.deck || null) !== state.deck;
       state.lang = msg.lang || null; state.deck = msg.deck || null;
       if (relang) dataChanged();
       state.i = Math.max(0, Math.min(slides.length - 1, msg.i)); state.pass = msg.pass || null; state.passMode = msg.passMode || state.passMode; state.passView = msg.passView || state.passView;
+      state.scene = msg.scene === "conf" ? "conf" : null;
       state.slidesOff = !!msg.slidesOff; state.black = !!msg.black; state.disc = msg.disc || false; state.theme = msg.theme || state.theme; state.scale = msg.scale || state.scale; state.view = msg.view || state.view;
       if (state.pass && state.pass[2] && state.pass[2] !== talkId) preloadMedia(state.pass[2]).then(render);
       render();
@@ -665,12 +698,13 @@
       const n = Math.max(0, Math.min(slides.length - 1, i));
       if (n !== state.i && startTime === null && n > 0) startTime = Date.now();
       const foreign = state.pass && state.pass[2] && state.pass[2] !== talkId, prevSlide = slideOf(state.i);
-      state.i = n; state.black = false; state.disc = false;
+      state.i = n; state.black = false; state.disc = false; state.scene = null;
       // La slide cambia solo dove il testo lo indica: nel frattempo restano valide le scelte della regia.
       if (syncSlides()) { if (foreign || slideOf(n) !== prevSlide) syncPass(); }
       else if (isFull(state.passMode) || foreign) state.pass = null;
       render(); broadcast();
     }
+    function step(d) { if (state.scene === "conf") toggleCover(); else go(state.i + d); }
     function slideOf(i) { const f = (slides[i] || {}).f; return f === undefined ? null : f; }
     function syncPass() {
       const f = slideOf(state.i);
@@ -680,7 +714,7 @@
     function showPass(k, pg, src) {
       src = src || (state.pass && state.pass[2]) || talkId;
       const p = materialsFor(src)[k]; if (!p) return;
-      state.pass = [k, Math.max(0, Math.min(p.pages.length - 1, pg || 0)), src]; state.black = false;
+      state.pass = [k, Math.max(0, Math.min(p.pages.length - 1, pg || 0)), src]; state.black = false; state.scene = null;
       if (p.kind === "slide" && slides[state.i] && slides[state.i].type === "cover" && !isFull(state.passMode)) state.passMode = "side-t";
       preloadMedia(src).then(render);
       render(); broadcast();
@@ -707,6 +741,12 @@
     function closePass() { state.pass = null; render(); broadcast(); }
     function toggleSlides() { if (!syncSlides()) return; state.slidesOff = !state.slidesOff; syncPass(); render(); broadcast(); }
     function toggleBlack() { state.black = !state.black; render(); broadcast(); }
+    // La copertina va sopra l'intervento senza toccarne lo stato: togliendola si torna allo stesso punto.
+    function toggleCover() {
+      state.black = false;
+      if (talkId !== "cover") state.scene = state.scene === "conf" ? null : "conf";
+      render(); broadcast();
+    }
     function setLang(code) { state.lang = code === info.talk.to ? null : code; dataChanged(); render(); broadcast(); }
     function setDeck(id) { state.deck = id; dataChanged(); render(); broadcast(); }
     function cycleDeck() {
@@ -718,7 +758,7 @@
     function setDisc(ids) {
       state.disc = ids && ids.length ? ids : false;
       if (state.disc) {
-        state.black = false;
+        state.black = false; state.scene = null;
         if (syncSlides()) state.pass = null;  // la slide legata al testo non serve in discussione; con G se ne richiama una
       } else if (state.pass && state.pass[2] && state.pass[2] !== talkId) state.pass = null;
       if (!state.disc && syncSlides()) syncPass();
@@ -833,6 +873,7 @@
       if (k === "j" || k === "J" || k === "k" || k === "K") { passFlow(k === "j" || k === "J" ? 1 : -1); return; }
       if (k === "h" || k === "H" || k === "l" || k === "L") { passJump(k === "l" || k === "L" ? 1 : -1); return; }
       const fwd = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter", "n", "N", "d", "D"].indexOf(k) >= 0, back = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace", "p", "P", "a", "A"].indexOf(k) >= 0;
+      if (state.scene === "conf" && (fwd || back)) { e.preventDefault(); toggleCover(); return; }
       if (state.pass && isFull(state.passMode) && !syncSlides() && (fwd || back)) { e.preventDefault(); passStep(fwd ? 1 : -1); return; }
       if (fwd) { e.preventDefault(); go(state.i + 1); }
       else if (back) { e.preventDefault(); go(state.i - 1); }
@@ -847,6 +888,7 @@
       else if (k === "o" || k === "O") cycleDeck();
       else if ((k === "e" || k === "E") && mode === "regia") { e.preventDefault(); openFix(); }
       else if (k === "b" || k === "B" || k === "." || k === "w" || k === "W") toggleBlack();
+      else if (k === "c" || k === "C") toggleCover();
       else if (k === "t" || k === "T") toggleTheme();
       else if (k === "q" || k === "Q") toggleDisc();
       else if (k === "s" || k === "S") toggleView();
@@ -864,6 +906,7 @@
       document.addEventListener("mousemove", () => { scr.classList.add("show-cursor"); clearTimeout(tmo); tmo = setTimeout(() => scr.classList.remove("show-cursor"), 1500); });
       scr.addEventListener("click", (e) => {
         if (preview) return;
+        if (state.scene === "conf") { toggleCover(); return; }
         const segc = e.target.closest(".seg");
         if (segc && segc.dataset.pg !== undefined && state.pass) { showPass(state.pass[0], +segc.dataset.pg); return; }
         if (segc && segc.dataset.i !== undefined) { go(+segc.dataset.i); return; }
@@ -891,6 +934,7 @@
         "</header>" +
         '<div id="otherbar" class="otherbar" role="status"></div>' +
         '<div id="blackbar" class="blackbar" role="status">Lo schermo è nero. Premi <kbd>B</kbd> o «Avanti» per riaccenderlo.</div>' +
+        '<div id="coverbar" class="coverbar" role="status">Sullo schermo c\'è la copertina della conferenza. Premi <kbd>C</kbd> o «Avanti» per tornare a questo punto.</div>' +
         '<div id="missbar" class="missbar" role="status"></div>' +
         '<div id="passbar" class="passbar"></div>' +
         '<div id="panels">' +
@@ -910,6 +954,7 @@
           '<button id="b-pass" class="tool">Slide e citazioni <kbd>G</kbd></button>' +
           (syncSlides() ? '<button id="b-slides" class="tool">Nascondi slide <kbd>M</kbd></button>' : "") +
           '<button id="b-disc" class="tool">Discussione <kbd>Q</kbd></button>' +
+          (t ? '<button id="b-cover" class="tool">Copertina <kbd>C</kbd></button>' : "") +
           '<button id="b-black" class="tool">Schermo nero <kbd>B</kbd></button>' +
           (t ? '<button id="b-fix" class="tool">Correggi <kbd>E</kbd></button>' : "") +
           '<button id="b-theme" class="tool" title="Chiaro o scuro (T)">Chiaro / scuro</button>' +
@@ -918,7 +963,7 @@
         '<details class="keys"><summary>Scorciatoie da tastiera</summary><dl>' +
           "<dt><kbd>→</kbd> <kbd>D</kbd> <kbd>Spazio</kbd> <kbd>PagGiù</kbd></dt><dd>avanti</dd><dt><kbd>←</kbd> <kbd>A</kbd> <kbd>PagSu</kbd></dt><dd>indietro</dd>" +
           "<dt>numero + <kbd>Invio</kbd></dt><dd>vai alla schermata</dd><dt><kbd>B</kbd></dt><dd>schermo nero</dd>" +
-          "<dt><kbd>S</kbd></dt><dd>a schermate o foglio unico</dd><dt><kbd>V</kbd></dt><dd>testo a fronte in regia</dd>" +
+          "<dt><kbd>C</kbd></dt><dd>copertina della conferenza; di nuovo <kbd>C</kbd> o «Avanti» per tornare allo stesso punto</dd><dt><kbd>S</kbd></dt><dd>a schermate o foglio unico</dd><dt><kbd>V</kbd></dt><dd>testo a fronte in regia</dd>" +
           "<dt><kbd>E</kbd></dt><dd>correggi la schermata corrente</dd><dt><kbd>M</kbd></dt><dd>mostra o nascondi le slide legate al testo</dd>" +
           "<dt><kbd>G</kbd> + numero</dt><dd>elenco di slide e citazioni, proietta quella col numero</dd><dt><kbd>Maiusc</kbd>+<kbd>G</kbd></dt><dd>tutti i relatori: scegli il relatore, poi l'elemento; <kbd>⌫</kbd> torna ai relatori</dd>" +
           "<dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>slide o pagina avanti e indietro</dd><dt><kbd>L</kbd> <kbd>H</kbd></dt><dd>elemento successivo e precedente</dd>" +
@@ -934,8 +979,9 @@
       const jump = (i) => { regiaScrollLock = true; go(i); regiaScrollLock = false; };
       ul.addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) jump(+li.dataset.i); });
       document.getElementById("bilingual").addEventListener("click", (e) => { const r = e.target.closest(".row[data-i]"); if (r) jump(+r.dataset.i); });
-      document.getElementById("b-next").onclick = () => go(state.i + 1);
-      document.getElementById("b-prev").onclick = () => go(state.i - 1);
+      document.getElementById("b-next").onclick = () => step(1);
+      document.getElementById("b-prev").onclick = () => step(-1);
+      if (document.getElementById("b-cover")) document.getElementById("b-cover").onclick = toggleCover;
       if (document.getElementById("b-slides")) document.getElementById("b-slides").onclick = toggleSlides;
       if (document.getElementById("b-fix")) document.getElementById("b-fix").onclick = openFix;
       document.getElementById("b-black").onclick = toggleBlack;
@@ -954,7 +1000,7 @@
       buildBilingual();
       // Dopo un clic col mouse le scorciatoie devono restare attive; da tastiera il fuoco resta dov'è.
       document.querySelector(".regia").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && e.detail > 0 && !b.closest(".fixdlg")) b.blur(); });
-      document.getElementById("b-send").onclick = () => { broadcast(); render(); };
+      document.getElementById("b-send").onclick = window.__send;
       document.getElementById("b-plus").onclick = () => scaleBy(1.08);
       document.getElementById("b-minus").onclick = () => scaleBy(1 / 1.08);
       document.getElementById("q").addEventListener("input", function () {
@@ -1009,19 +1055,20 @@
     else if (!sample) {
       try {
         const last = JSON.parse(store(KEY) || "null"), pos = JSON.parse(store(POS(talkId)) || "null");
-        if (last && last.t === talkId) state.i = Math.min(slides.length - 1, last.i);
+        if (last && last.t === talkId) { state.i = Math.min(slides.length - 1, last.i); state.scene = last.scene === "conf" ? "conf" : null; }
         else if (pos && typeof pos.i === "number") state.i = Math.min(slides.length - 1, pos.i);
-        if (last) screenTalk = last.t;
+        if (last) { screenTalk = last.t; screenScene = last.scene || null; }
       } catch (e) { /* posizione illeggibile: si parte dall'inizio */ }
     }
     if (route.view === "sheet" || route.view === "slides") state.view = route.view;
     if (preview && !sample) {
       try {
         const lm = JSON.parse(store(KEY) || "null");
-        if (lm && lm.t === talkId) { state.i = Math.min(slides.length - 1, lm.i); state.pass = lm.pass || null; state.disc = lm.disc || false; state.passMode = lm.passMode || state.passMode; state.passView = lm.passView || state.passView; state.slidesOff = !!lm.slidesOff; state.lang = lm.lang || null; state.deck = lm.deck || null; state.black = !!lm.black; state.theme = lm.theme || state.theme; state.scale = lm.scale || state.scale; state.view = lm.view || state.view; lastTs = lm.ts; buildSlides(); }
+        if (lm && lm.t === talkId) { state.i = Math.min(slides.length - 1, lm.i); state.scene = lm.scene === "conf" ? "conf" : null; state.pass = lm.pass || null; state.disc = lm.disc || false; state.passMode = lm.passMode || state.passMode; state.passView = lm.passView || state.passView; state.slidesOff = !!lm.slidesOff; state.lang = lm.lang || null; state.deck = lm.deck || null; state.black = !!lm.black; state.theme = lm.theme || state.theme; state.scale = lm.scale || state.scale; state.view = lm.view || state.view; lastTs = lm.ts; buildSlides(); }
       } catch (e) { /* si parte dall'inizio */ }
     }
     if (info) await preloadMedia(talkId);
+    if (mode === "screen" && conf.theme.poster && conf.theme.poster.media) await Store.mediaURL(conf.theme.poster.media);
     if (syncSlides() && !state.pass) syncPass();
     if (mode === "screen") initScreen(); else initRegia();
     if (sample) setScene(route.scene || "text");

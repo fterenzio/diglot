@@ -215,6 +215,22 @@ kbd { font-family: var(--font-label); font-size: .85em; font-weight: 600; border
 .cover.conf .lead { font-size: 8vh; line-height: 1.08; margin: 3vh 0 1.5vh; }
 .cover.conf .rule { margin-top: 3vh; }
 
+/* Locandina sulla copertina: la larghezza viene dalle proporzioni del file */
+.screen.poster-beside { --poster-w: min(46vw, calc(90vh * var(--poster-r, .7))); }
+.screen.poster-alone { --poster-w: min(100vw, calc(100vh * var(--poster-r, .7))); }
+.screen.poster-beside .stage { top: 5vh; bottom: 5vh; right: 4vw; }
+.screen.poster-alone .stage { inset: 0; justify-content: center; }
+.screen .poster { width: var(--poster-w); aspect-ratio: var(--poster-r, .7); margin: 0; background: #fff; flex-shrink: 0; }
+.screen .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.screen.poster-beside .poster { border: 1px solid var(--rule); }
+.screen .conf-poster { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 4vw; align-items: center; }
+.conf-poster .cover.conf .pre { font-size: calc(3.6vh * var(--k, 1)); }
+.conf-poster .cover.conf .pre2 { font-size: calc(3.2vh * var(--k, 1)); }
+.conf-poster .cover.conf .big { font-size: calc(10vh * var(--k, 1)); }
+.conf-poster .cover.conf .lead { font-size: calc(6.4vh * var(--k, 1)); }
+.screen.poster-beside .logo.tr, .screen.poster-beside .logo.br { right: calc(var(--poster-w) + 8vw); }
+.screen.poster-alone .logo, .screen.poster-alone.on-cover .logo.cover-only { display: none; }
+
 /* Discussione: dimensioni in em, il blocco intero si adatta al numero di relatori */
 .screen.disc-mode .sheet { display: none !important; }
 .screen.disc-mode .stage { display: flex !important; }
@@ -333,6 +349,7 @@ kbd { font-family: var(--font-label); font-size: .85em; font-weight: 600; border
 .regia .blackbar { background: #111; color: #fff; border-radius: 6px; padding: 11px 16px; font-size: 14px; }
 .regia .blackbar kbd { background: #333; color: #fff; border-color: #555; }
 .regia .missbar { border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; padding: 8px 14px; font-size: 13px; }
+.regia .coverbar { border: 2px solid var(--accent); border-radius: 6px; background: var(--accent-tint); padding: 11px 16px; font-size: 14px; }
 
 #panels { display: contents; }
 .regia .box { border: 1px solid var(--rule); border-radius: 8px; padding: 14px 18px; background: var(--paper); }
@@ -361,8 +378,8 @@ kbd { font-family: var(--font-label); font-size: .85em; font-weight: 600; border
 .regia .tool { font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
 .regia .tool:hover { border-color: var(--ink); }
 .regia .tool:disabled { opacity: .5; cursor: not-allowed; }
-.regia #b-disc.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-.regia #b-disc.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
+.regia #b-disc.on, .regia #b-cover.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.regia #b-disc.on kbd, .regia #b-cover.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
 .regia #b-black.on { background: #111; border-color: #111; color: #fff; }
 .regia #b-black.on kbd { background: #333; color: #fff; border-color: #555; }
 .regia .sizes { display: inline-flex; gap: 4px; }
@@ -578,6 +595,7 @@ dialog.dlg p { line-height: 1.45; }
 .t-title2 { font-family: var(--font-text); font-size: 28px; line-height: 1.2; font-style: italic; color: var(--ink-soft); }
 .rule-mark { width: 120px; height: 3px; background: var(--accent); margin: 18px 0 22px; }
 .conf-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 28px; }
+.conf-more { margin: 2px 0 14px; }
 .lang-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
 .lang-chip { font-size: 14px; display: inline-flex; gap: 8px; align-items: baseline; }
 .day { margin-top: 42px; }
@@ -700,8 +718,9 @@ dialog.dlg p { line-height: 1.45; }
 .color input { width: 58px; height: 34px; padding: 2px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); cursor: pointer; }
 .contrast { list-style: none; margin: 8px 0 12px; padding: 0; font-size: 12.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .contrast .bad { color: var(--warn); font-weight: 600; }
-.btn.file { position: relative; margin-bottom: 10px; }
+.btn.file { position: relative; margin: 0 8px 10px 0; }
 .th-logo { margin-bottom: 14px; }
+.th-view { align-self: stretch; }
 .th-stick { position: sticky; top: 72px; display: flex; flex-direction: column; gap: 12px; }
 .th-frame { aspect-ratio: 16 / 9; border: 1px solid var(--ink); background: var(--paper); }
 .th-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
@@ -1191,6 +1210,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const th = conf.theme || {};
     if (th.logo && th.logo.media) out.push(th.logo.media);
     if (th.coverBg && th.coverBg.media) out.push(th.coverBg.media);
+    if (th.poster && th.poster.media) out.push(th.poster.media);
     (th.fonts || []).forEach((f) => { if (f.media) out.push(f.media); });
     return out;
   }
@@ -1225,7 +1245,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       fontText: "EB Garamond", fontLabel: "Archivo", fonts: [],
       size: 1, lineHeight: 1.32, align: "left", margin: 7,
       bar: true, barCaps: true, progress: true, sideText: 42,
-      logo: null, coverBg: null,
+      logo: null, coverBg: null, poster: null,
     };
   }
   function normalize(t) {
@@ -1839,6 +1859,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return out.map((p) => ({ text: T.markExplicitCues(p.text.replace(/\s+([.,])(?=\s|$)/g, "$1")), heading: p.heading, quote: p.indent > body * 1.5 || (p.chars > 120 && p.italicChars / p.chars > 0.9), page: p.page }));
   }
 
+  async function pageImage(doc, n, file, conf) {
+    const page = await doc.getPage(n);
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(4, 1920 / Math.max(base.width, base.height));
+    const vp = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    const blob = await L.Decks.canvasBlob(canvas);
+    const media = await L.Store.putMedia(blob, conf.id, file.name + " · " + n);
+    const out = { media, w: canvas.width, h: canvas.height };
+    canvas.width = canvas.height = 0;
+    page.cleanup();
+    return out;
+  }
+
   L.Pdf = {
     open,
     async read(file, progress) {
@@ -1885,24 +1923,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const slides = [];
       for (let n = 1; n <= doc.numPages; n++) {
         if (progress) progress("Preparo la slide " + n + " di " + doc.numPages);
-        const page = await doc.getPage(n);
-        const base = page.getViewport({ scale: 1 });
-        const scale = Math.min(4, 1920 / Math.max(base.width, base.height));
-        const vp = page.getViewport({ scale });
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        const blob = await L.Decks.canvasBlob(canvas);
-        const media = await L.Store.putMedia(blob, conf.id, file.name + " · " + n);
-        slides.push({ media, w: canvas.width, h: canvas.height });
-        canvas.width = canvas.height = 0;
-        page.cleanup();
+        slides.push(await pageImage(doc, n, file, conf));
         await L.yieldUI();
       }
       await doc.destroy();
       return slides;
+    },
+    async renderFirstPage(file, conf) {
+      const doc = await open(file);
+      const out = await pageImage(doc, 1, file, conf);
+      out.pages = doc.numPages;
+      await doc.destroy();
+      return out;
     },
   };
 })(window.Diglot);
@@ -2461,6 +2493,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const th = conf.theme || {};
     if (th.logo && map[th.logo.media]) th.logo.media = map[th.logo.media];
     if (th.coverBg && map[th.coverBg.media]) th.coverBg.media = map[th.coverBg.media];
+    if (th.poster && map[th.poster.media]) th.poster.media = map[th.poster.media];
     (th.fonts || []).forEach((f) => { if (map[f.media]) f.media = map[f.media]; });
   }
 
@@ -2491,7 +2524,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const conf = M.normalize(data);
     conf.id = L.uid("c");
     M.eachTalk(conf, (t) => { t.decks = []; t.deck = null; });
-    conf.theme.logo = null; conf.theme.coverBg = null; conf.theme.fonts = [];
+    conf.theme.logo = null; conf.theme.coverBg = null; conf.theme.poster = null; conf.theme.fonts = [];
     return conf;
   }
 
@@ -3121,6 +3154,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       }
       throw new Error("Per le slide servono un PDF, un PowerPoint (.pptx) oppure una o più immagini. Più file insieme funzionano solo se sono tutte immagini.");
     },
+
+    async importPoster(file, conf) {
+      const ext = L.fileExt(file.name);
+      if (ext === "pdf") return L.Pdf.renderFirstPage(file, conf);
+      if (!IMG.has(ext)) throw new Error("Per la locandina servono un PDF o un'immagine.");
+      const size = await imageSize(file);
+      if (!size) throw new Error("«" + file.name + "» non è un'immagine leggibile.");
+      return { media: await L.Store.putMedia(file, conf.id, file.name), w: size.w, h: size.h, pages: 1 };
+    },
   };
 })(window.Diglot);
 </script>
@@ -3270,6 +3312,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         (t2 ? '<div class="t2">' + esc(t2) + "</div>" : "") +
         '<div class="meta">' + esc(end ? M.label(sl, "end") : t.segments.length ? screenTag() : "") + "</div></div>";
     }
+    function posterHTML(pos) {
+      const url = Store.cachedURL(pos.media);
+      if (!url) Store.mediaURL(pos.media).then((u) => { if (u) render(); });
+      return '<figure class="poster"><img src="' + esc(url) + '" alt="Locandina"></figure>';
+    }
     function confHTML() {
       const langs = conf.languages;
       const kicker = langs.map((c) => conf.kicker[c]).filter(Boolean).join(" · ");
@@ -3278,8 +3325,23 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       let body;
       if (conf.big) body = titles.map((x, i) => '<div class="' + (i ? "pre2" : "pre") + '">' + esc(x) + "</div>").join("") + '<div class="big">' + esc(conf.big) + "</div>";
       else body = titles.map((x, i) => '<div class="' + (i ? "pre2" : "lead") + '">' + esc(x) + "</div>").join("");
-      return '<div class="cover conf">' + (kicker ? '<div class="kicker">' + esc(kicker) + "</div>" : "") + body + '<div class="rule"></div>' +
+      const text = '<div class="cover conf">' + (kicker ? '<div class="kicker">' + esc(kicker) + "</div>" : "") + body + '<div class="rule"></div>' +
         (where ? '<div class="meta" style="margin-top:0">' + esc(where) + "</div>" : "") + "</div>";
+      const pos = conf.theme.poster;
+      if (!pos || !pos.media) return text;
+      return pos.show === "alone" ? posterHTML(pos) : '<div class="conf-poster">' + text + posterHTML(pos) + "</div>";
+    }
+    function renderConf() {
+      const stage = document.querySelector(".stage");
+      document.querySelector(".bar").style.visibility = "hidden";
+      document.querySelector(".foot").style.visibility = "hidden";
+      stage.dataset.key = "";
+      stage.innerHTML = confHTML();
+      // Accanto alla locandina il titolo ha meno spazio: si riduce quanto basta.
+      const text = stage.querySelector(".conf-poster .cover");
+      if (!text) return;
+      let k = 1;
+      while ((text.scrollHeight > stage.clientHeight || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
     }
 
     function textBase(frac) { return window.innerHeight * frac * state.scale * (conf.theme.size || 1); }
@@ -3479,23 +3541,24 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       applyDecor(scr);
       scr.classList.toggle("sheet-mode", sheetMode);
       document.querySelector(".blackout").classList.toggle("on", state.black);
-      const cp = curPass();
-      scr.classList.toggle("disc-mode", !!state.disc && !cp);
+      const onScene = state.scene === "conf", cp = onScene ? null : curPass();
+      scr.classList.toggle("disc-mode", !onScene && !!state.disc && !cp);
       scr.classList.toggle("pass-mode", !!cp);
       scr.classList.toggle("side-mode", !!cp && !isFull(state.passMode));
       const sl = slides[state.i] || slides[0];
-      const isCover = state.scene === "conf" || (!cp && !sheetMode && (state.disc || sl.type === "cover" || sl.type === "conf"));
+      const isCover = onScene || (!cp && !sheetMode && (state.disc || sl.type === "cover" || sl.type === "conf"));
       scr.classList.toggle("on-cover", !!isCover);
-      if (state.scene === "conf") { const b = document.querySelector(".bar"); b.style.visibility = "hidden"; document.querySelector(".foot").style.visibility = "hidden"; const st = document.querySelector(".stage"); st.dataset.key = ""; st.innerHTML = confHTML(); return; }
+      const onConf = onScene || (sl.type === "conf" && !cp && !state.disc), pos = onConf && conf.theme.poster && conf.theme.poster.media ? conf.theme.poster : null;
+      scr.classList.toggle("poster-beside", !!pos && pos.show !== "alone");
+      scr.classList.toggle("poster-alone", !!pos && pos.show === "alone");
+      if (pos) scr.style.setProperty("--poster-r", (pos.w || 7) / (pos.h || 10));
+      document.querySelector(".stage").classList.remove("disc-top");
+      if (onConf) { renderConf(); return; }
       if (state.disc && !cp) { renderDiscussion(); return; }
-      if (cp && !isFull(state.passMode)) { renderSide(cp); return; }
+      if (cp && info && !isFull(state.passMode)) { renderSide(cp); return; }
       if (cp) { renderPassage(cp); return; }
       if (sheetMode) { renderSheet(); return; }
       const bar = document.querySelector(".bar"), stage = document.querySelector(".stage"), prog = document.querySelector(".foot i");
-      if (sl.type === "conf") {
-        bar.style.visibility = "hidden"; stage.dataset.key = ""; stage.innerHTML = confHTML(); prog.parentNode.style.visibility = "hidden";
-        return;
-      }
       bar.style.visibility = sl.type === "cover" ? "hidden" : "visible";
       prog.parentNode.style.visibility = sl.type === "cover" ? "hidden" : "visible";
       bar.innerHTML = barHTML();
@@ -3506,16 +3569,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       fit(stage.firstChild, stage);
     }
 
-    let startTime = null, regiaScrollLock = false, screenTalk = null;
+    let startTime = null, regiaScrollLock = false, screenTalk = null, screenScene = null;
     let regiaBi = store(BI) === "1", biScrolled = false;
     let passOpen = false, passScope = null, passBuf = "", passTmo = null, passIndex = [], discOpen = false, fixOpen = false;
 
     function statusText(other, cpS) {
       if (other) return "Schermo su un altro intervento";
       if (state.black) return "Schermo nero";
+      if (state.scene === "conf") return "Copertina della conferenza";
       const what = (c) => (c.p.kind === "slide" ? "slide" : "citazione") + (isFull(state.passMode) ? " a tutto schermo" : " accanto al testo");
       if (state.disc) return "Discussione · " + (cpS ? what(cpS) : discIds().length + (discIds().length === 1 ? " relatore" : " relatori"));
       if (cpS) return what(cpS).charAt(0).toUpperCase() + what(cpS).slice(1);
+      if (talkId === "cover") return "Copertina della conferenza";
       return state.view === "sheet" ? "Testo · foglio unico" : "Testo · a schermate";
     }
     const segH = (label, items, cur, fn) => '<div class="seg" role="group" aria-label="' + label + '"><span>' + label + "</span>" + items.map((m) =>
@@ -3544,19 +3609,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       document.getElementById("b-black").setAttribute("aria-pressed", state.black);
       document.getElementById("b-disc").classList.toggle("on", !!state.disc);
       document.getElementById("b-disc").setAttribute("aria-pressed", !!state.disc);
+      const bc = document.getElementById("b-cover");
+      if (bc) { bc.classList.toggle("on", state.scene === "conf"); bc.setAttribute("aria-pressed", state.scene === "conf"); }
       const other = screenTalk && screenTalk !== talkId, ob = document.getElementById("otherbar");
       ob.style.display = other ? "" : "none";
       if (other) {
         const ot = screenTalk === "cover" ? null : findTalk(screenTalk);
-        ob.innerHTML = "<span>Sullo schermo c'è ancora <b>" + esc(ot ? ot.talk.speaker : screenTalk === "cover" ? "la copertina della conferenza" : screenTalk) + "</b>. Questo intervento comparirà al primo «Avanti».</span>" +
+        ob.innerHTML = "<span>Sullo schermo c'è ancora <b>" + esc(screenScene === "conf" || screenTalk === "cover" ? "la copertina della conferenza" : ot ? ot.talk.speaker : screenTalk) + "</b>. Questo intervento comparirà al primo «Avanti».</span>" +
           '<button onclick="window.__send()">Porta questo intervento sullo schermo</button>';
       }
       document.getElementById("blackbar").style.display = state.black && !other ? "" : "none";
+      document.getElementById("coverbar").style.display = state.scene === "conf" && !state.black && !other ? "" : "none";
       [["sv-slides", state.view === "slides"], ["sv-sheet", state.view === "sheet"], ["rv-panels", !regiaBi], ["rv-bi", regiaBi]].forEach((x) => {
         const b = document.getElementById(x[0]); b.classList.toggle("on", x[1]); b.setAttribute("aria-pressed", x[1]);
       });
       const cpS = curPass(), st = document.getElementById("status");
-      st.className = "status" + (other ? " other" : state.black ? " black" : state.disc || cpS ? " pass" : "");
+      st.className = "status" + (other ? " other" : state.black ? " black" : state.scene === "conf" || state.disc || cpS ? " pass" : "");
       st.textContent = statusText(other, cpS);
       document.getElementById("pv-state").textContent = st.textContent;
       document.querySelector(".regia").classList.toggle("bi", regiaBi);
@@ -3604,7 +3672,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (cur && !regiaScrollLock && !regiaBi) listBox.scrollTop = cur.offsetTop - listBox.offsetTop - listBox.clientHeight / 2;
     }
 
-    window.__send = () => { broadcast(); render(); };
+    window.__send = () => { state.scene = null; broadcast(); render(); };
     window.__fx = () => closePass();
     window.__pall = () => { passScope = "all"; passBuf = ""; buildPassPanel(); };
     window.__tp = () => togglePassPanel();
@@ -3715,8 +3783,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     function rememberPos(t, i) { store(POS(t), JSON.stringify({ i, ts: Date.now() })); }
     function broadcast() {
       if (preview) return;
-      rememberPos(talkId, state.i); screenTalk = talkId;
-      const msg = { t: talkId, i: state.i, disc: state.disc, pass: state.pass, passMode: state.passMode, passView: state.passView, slidesOff: state.slidesOff, lang: state.lang, deck: state.deck, black: state.black, theme: state.theme, scale: state.scale, view: state.view, ts: Math.max(Date.now(), lastTs + 1), src: me };
+      rememberPos(talkId, state.i); screenTalk = talkId; screenScene = state.scene;
+      const msg = { t: talkId, i: state.i, scene: state.scene, disc: state.disc, pass: state.pass, passMode: state.passMode, passView: state.passView, slidesOff: state.slidesOff, lang: state.lang, deck: state.deck, black: state.black, theme: state.theme, scale: state.scale, view: state.view, ts: Math.max(Date.now(), lastTs + 1), src: me };
       lastTs = msg.ts;
       store(KEY, JSON.stringify(msg));
       try { if (bc) bc.postMessage(msg); } catch (e) { /* restano localStorage e postMessage */ }
@@ -3734,12 +3802,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     function apply(msg) {
       if (!msg || msg.src === me || !(msg.ts > lastTs)) return;
       lastTs = msg.ts;
-      if (mode === "regia" && msg.t !== screenTalk) { screenTalk = msg.t; render(); }
-      if (msg.t !== talkId) { if (mode === "screen") gotoTalk(msg.t, msg.i); return; }
+      if (mode === "regia" && (msg.t !== screenTalk || (msg.scene || null) !== screenScene)) { screenTalk = msg.t; screenScene = msg.scene || null; render(); }
+      if (msg.t !== talkId) {
+        if (mode !== "screen") return;
+        // La copertina non dipende dall'intervento: lo schermo la mostra senza ricaricarsi.
+        if (msg.scene === "conf") { state.scene = "conf"; state.black = !!msg.black; state.theme = msg.theme || state.theme; render(); return; }
+        gotoTalk(msg.t, msg.i);
+        return;
+      }
       const relang = (msg.lang || null) !== state.lang || (msg.deck || null) !== state.deck;
       state.lang = msg.lang || null; state.deck = msg.deck || null;
       if (relang) dataChanged();
       state.i = Math.max(0, Math.min(slides.length - 1, msg.i)); state.pass = msg.pass || null; state.passMode = msg.passMode || state.passMode; state.passView = msg.passView || state.passView;
+      state.scene = msg.scene === "conf" ? "conf" : null;
       state.slidesOff = !!msg.slidesOff; state.black = !!msg.black; state.disc = msg.disc || false; state.theme = msg.theme || state.theme; state.scale = msg.scale || state.scale; state.view = msg.view || state.view;
       if (state.pass && state.pass[2] && state.pass[2] !== talkId) preloadMedia(state.pass[2]).then(render);
       render();
@@ -3791,12 +3866,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const n = Math.max(0, Math.min(slides.length - 1, i));
       if (n !== state.i && startTime === null && n > 0) startTime = Date.now();
       const foreign = state.pass && state.pass[2] && state.pass[2] !== talkId, prevSlide = slideOf(state.i);
-      state.i = n; state.black = false; state.disc = false;
+      state.i = n; state.black = false; state.disc = false; state.scene = null;
       // La slide cambia solo dove il testo lo indica: nel frattempo restano valide le scelte della regia.
       if (syncSlides()) { if (foreign || slideOf(n) !== prevSlide) syncPass(); }
       else if (isFull(state.passMode) || foreign) state.pass = null;
       render(); broadcast();
     }
+    function step(d) { if (state.scene === "conf") toggleCover(); else go(state.i + d); }
     function slideOf(i) { const f = (slides[i] || {}).f; return f === undefined ? null : f; }
     function syncPass() {
       const f = slideOf(state.i);
@@ -3806,7 +3882,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     function showPass(k, pg, src) {
       src = src || (state.pass && state.pass[2]) || talkId;
       const p = materialsFor(src)[k]; if (!p) return;
-      state.pass = [k, Math.max(0, Math.min(p.pages.length - 1, pg || 0)), src]; state.black = false;
+      state.pass = [k, Math.max(0, Math.min(p.pages.length - 1, pg || 0)), src]; state.black = false; state.scene = null;
       if (p.kind === "slide" && slides[state.i] && slides[state.i].type === "cover" && !isFull(state.passMode)) state.passMode = "side-t";
       preloadMedia(src).then(render);
       render(); broadcast();
@@ -3833,6 +3909,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     function closePass() { state.pass = null; render(); broadcast(); }
     function toggleSlides() { if (!syncSlides()) return; state.slidesOff = !state.slidesOff; syncPass(); render(); broadcast(); }
     function toggleBlack() { state.black = !state.black; render(); broadcast(); }
+    // La copertina va sopra l'intervento senza toccarne lo stato: togliendola si torna allo stesso punto.
+    function toggleCover() {
+      state.black = false;
+      if (talkId !== "cover") state.scene = state.scene === "conf" ? null : "conf";
+      render(); broadcast();
+    }
     function setLang(code) { state.lang = code === info.talk.to ? null : code; dataChanged(); render(); broadcast(); }
     function setDeck(id) { state.deck = id; dataChanged(); render(); broadcast(); }
     function cycleDeck() {
@@ -3844,7 +3926,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     function setDisc(ids) {
       state.disc = ids && ids.length ? ids : false;
       if (state.disc) {
-        state.black = false;
+        state.black = false; state.scene = null;
         if (syncSlides()) state.pass = null;  // la slide legata al testo non serve in discussione; con G se ne richiama una
       } else if (state.pass && state.pass[2] && state.pass[2] !== talkId) state.pass = null;
       if (!state.disc && syncSlides()) syncPass();
@@ -3959,6 +4041,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (k === "j" || k === "J" || k === "k" || k === "K") { passFlow(k === "j" || k === "J" ? 1 : -1); return; }
       if (k === "h" || k === "H" || k === "l" || k === "L") { passJump(k === "l" || k === "L" ? 1 : -1); return; }
       const fwd = ["ArrowRight", "ArrowDown", "PageDown", " ", "Enter", "n", "N", "d", "D"].indexOf(k) >= 0, back = ["ArrowLeft", "ArrowUp", "PageUp", "Backspace", "p", "P", "a", "A"].indexOf(k) >= 0;
+      if (state.scene === "conf" && (fwd || back)) { e.preventDefault(); toggleCover(); return; }
       if (state.pass && isFull(state.passMode) && !syncSlides() && (fwd || back)) { e.preventDefault(); passStep(fwd ? 1 : -1); return; }
       if (fwd) { e.preventDefault(); go(state.i + 1); }
       else if (back) { e.preventDefault(); go(state.i - 1); }
@@ -3973,6 +4056,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       else if (k === "o" || k === "O") cycleDeck();
       else if ((k === "e" || k === "E") && mode === "regia") { e.preventDefault(); openFix(); }
       else if (k === "b" || k === "B" || k === "." || k === "w" || k === "W") toggleBlack();
+      else if (k === "c" || k === "C") toggleCover();
       else if (k === "t" || k === "T") toggleTheme();
       else if (k === "q" || k === "Q") toggleDisc();
       else if (k === "s" || k === "S") toggleView();
@@ -3990,6 +4074,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       document.addEventListener("mousemove", () => { scr.classList.add("show-cursor"); clearTimeout(tmo); tmo = setTimeout(() => scr.classList.remove("show-cursor"), 1500); });
       scr.addEventListener("click", (e) => {
         if (preview) return;
+        if (state.scene === "conf") { toggleCover(); return; }
         const segc = e.target.closest(".seg");
         if (segc && segc.dataset.pg !== undefined && state.pass) { showPass(state.pass[0], +segc.dataset.pg); return; }
         if (segc && segc.dataset.i !== undefined) { go(+segc.dataset.i); return; }
@@ -4017,6 +4102,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         "</header>" +
         '<div id="otherbar" class="otherbar" role="status"></div>' +
         '<div id="blackbar" class="blackbar" role="status">Lo schermo è nero. Premi <kbd>B</kbd> o «Avanti» per riaccenderlo.</div>' +
+        '<div id="coverbar" class="coverbar" role="status">Sullo schermo c\'è la copertina della conferenza. Premi <kbd>C</kbd> o «Avanti» per tornare a questo punto.</div>' +
         '<div id="missbar" class="missbar" role="status"></div>' +
         '<div id="passbar" class="passbar"></div>' +
         '<div id="panels">' +
@@ -4036,6 +4122,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           '<button id="b-pass" class="tool">Slide e citazioni <kbd>G</kbd></button>' +
           (syncSlides() ? '<button id="b-slides" class="tool">Nascondi slide <kbd>M</kbd></button>' : "") +
           '<button id="b-disc" class="tool">Discussione <kbd>Q</kbd></button>' +
+          (t ? '<button id="b-cover" class="tool">Copertina <kbd>C</kbd></button>' : "") +
           '<button id="b-black" class="tool">Schermo nero <kbd>B</kbd></button>' +
           (t ? '<button id="b-fix" class="tool">Correggi <kbd>E</kbd></button>' : "") +
           '<button id="b-theme" class="tool" title="Chiaro o scuro (T)">Chiaro / scuro</button>' +
@@ -4044,7 +4131,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         '<details class="keys"><summary>Scorciatoie da tastiera</summary><dl>' +
           "<dt><kbd>→</kbd> <kbd>D</kbd> <kbd>Spazio</kbd> <kbd>PagGiù</kbd></dt><dd>avanti</dd><dt><kbd>←</kbd> <kbd>A</kbd> <kbd>PagSu</kbd></dt><dd>indietro</dd>" +
           "<dt>numero + <kbd>Invio</kbd></dt><dd>vai alla schermata</dd><dt><kbd>B</kbd></dt><dd>schermo nero</dd>" +
-          "<dt><kbd>S</kbd></dt><dd>a schermate o foglio unico</dd><dt><kbd>V</kbd></dt><dd>testo a fronte in regia</dd>" +
+          "<dt><kbd>C</kbd></dt><dd>copertina della conferenza; di nuovo <kbd>C</kbd> o «Avanti» per tornare allo stesso punto</dd><dt><kbd>S</kbd></dt><dd>a schermate o foglio unico</dd><dt><kbd>V</kbd></dt><dd>testo a fronte in regia</dd>" +
           "<dt><kbd>E</kbd></dt><dd>correggi la schermata corrente</dd><dt><kbd>M</kbd></dt><dd>mostra o nascondi le slide legate al testo</dd>" +
           "<dt><kbd>G</kbd> + numero</dt><dd>elenco di slide e citazioni, proietta quella col numero</dd><dt><kbd>Maiusc</kbd>+<kbd>G</kbd></dt><dd>tutti i relatori: scegli il relatore, poi l'elemento; <kbd>⌫</kbd> torna ai relatori</dd>" +
           "<dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>slide o pagina avanti e indietro</dd><dt><kbd>L</kbd> <kbd>H</kbd></dt><dd>elemento successivo e precedente</dd>" +
@@ -4060,8 +4147,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const jump = (i) => { regiaScrollLock = true; go(i); regiaScrollLock = false; };
       ul.addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) jump(+li.dataset.i); });
       document.getElementById("bilingual").addEventListener("click", (e) => { const r = e.target.closest(".row[data-i]"); if (r) jump(+r.dataset.i); });
-      document.getElementById("b-next").onclick = () => go(state.i + 1);
-      document.getElementById("b-prev").onclick = () => go(state.i - 1);
+      document.getElementById("b-next").onclick = () => step(1);
+      document.getElementById("b-prev").onclick = () => step(-1);
+      if (document.getElementById("b-cover")) document.getElementById("b-cover").onclick = toggleCover;
       if (document.getElementById("b-slides")) document.getElementById("b-slides").onclick = toggleSlides;
       if (document.getElementById("b-fix")) document.getElementById("b-fix").onclick = openFix;
       document.getElementById("b-black").onclick = toggleBlack;
@@ -4080,7 +4168,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       buildBilingual();
       // Dopo un clic col mouse le scorciatoie devono restare attive; da tastiera il fuoco resta dov'è.
       document.querySelector(".regia").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && e.detail > 0 && !b.closest(".fixdlg")) b.blur(); });
-      document.getElementById("b-send").onclick = () => { broadcast(); render(); };
+      document.getElementById("b-send").onclick = window.__send;
       document.getElementById("b-plus").onclick = () => scaleBy(1.08);
       document.getElementById("b-minus").onclick = () => scaleBy(1 / 1.08);
       document.getElementById("q").addEventListener("input", function () {
@@ -4135,19 +4223,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     else if (!sample) {
       try {
         const last = JSON.parse(store(KEY) || "null"), pos = JSON.parse(store(POS(talkId)) || "null");
-        if (last && last.t === talkId) state.i = Math.min(slides.length - 1, last.i);
+        if (last && last.t === talkId) { state.i = Math.min(slides.length - 1, last.i); state.scene = last.scene === "conf" ? "conf" : null; }
         else if (pos && typeof pos.i === "number") state.i = Math.min(slides.length - 1, pos.i);
-        if (last) screenTalk = last.t;
+        if (last) { screenTalk = last.t; screenScene = last.scene || null; }
       } catch (e) { /* posizione illeggibile: si parte dall'inizio */ }
     }
     if (route.view === "sheet" || route.view === "slides") state.view = route.view;
     if (preview && !sample) {
       try {
         const lm = JSON.parse(store(KEY) || "null");
-        if (lm && lm.t === talkId) { state.i = Math.min(slides.length - 1, lm.i); state.pass = lm.pass || null; state.disc = lm.disc || false; state.passMode = lm.passMode || state.passMode; state.passView = lm.passView || state.passView; state.slidesOff = !!lm.slidesOff; state.lang = lm.lang || null; state.deck = lm.deck || null; state.black = !!lm.black; state.theme = lm.theme || state.theme; state.scale = lm.scale || state.scale; state.view = lm.view || state.view; lastTs = lm.ts; buildSlides(); }
+        if (lm && lm.t === talkId) { state.i = Math.min(slides.length - 1, lm.i); state.scene = lm.scene === "conf" ? "conf" : null; state.pass = lm.pass || null; state.disc = lm.disc || false; state.passMode = lm.passMode || state.passMode; state.passView = lm.passView || state.passView; state.slidesOff = !!lm.slidesOff; state.lang = lm.lang || null; state.deck = lm.deck || null; state.black = !!lm.black; state.theme = lm.theme || state.theme; state.scale = lm.scale || state.scale; state.view = lm.view || state.view; lastTs = lm.ts; buildSlides(); }
       } catch (e) { /* si parte dall'inizio */ }
     }
     if (info) await preloadMedia(talkId);
+    if (mode === "screen" && conf.theme.poster && conf.theme.poster.media) await Store.mediaURL(conf.theme.poster.media);
     if (syncSlides() && !state.pass) syncPass();
     if (mode === "screen") initScreen(); else initRegia();
     if (sample) setScene(route.scene || "text");
@@ -4712,6 +4801,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
               M.eachTalk(copy, (t) => { t.id = L.uid("t"); t.decks.forEach((d) => d.slides.forEach((s) => { if (map[s.media]) s.media = map[s.media]; })); });
               if (copy.theme.logo && map[copy.theme.logo.media]) copy.theme.logo.media = map[copy.theme.logo.media];
               if (copy.theme.coverBg && map[copy.theme.coverBg.media]) copy.theme.coverBg.media = map[copy.theme.coverBg.media];
+              if (copy.theme.poster && map[copy.theme.poster.media]) copy.theme.poster.media = map[copy.theme.poster.media];
               copy.theme.fonts.forEach((f) => { if (map[f.media]) f.media = map[f.media]; });
               copy.title = Object.fromEntries(Object.entries(copy.title).map(([k, v]) => [k, v + " (copia)"]));
               await Store.putConference(copy);
@@ -4771,6 +4861,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         Studio.labeled("Luogo", Studio.field({ value: conf.place, placeholder: "Città, sede", set: (v) => { conf.place = v; } })),
         Studio.labeled("Date sulla copertina", Studio.field({ value: conf.datesText, placeholder: M.datesLabel(Object.assign({}, conf, { datesText: "" }), l[0]) || "Si ricavano dai giorni", set: (v) => { conf.datesText = v; } })),
         l.map((c) => Studio.labeled("Dicitura sopra il titolo (" + M.langName(c) + ")", Studio.field({ value: conf.kicker[c], placeholder: "Facoltativa", lang: c, set: (v) => { conf.kicker[c] = v; } })))),
+      el("p", { class: "lab-h conf-more" }, "Locandina, logo e sfondo della copertina si caricano in ", el("a", { href: "#/c/" + conf.id + "/grafica" }, "Grafica"), "."),
       langHeader(conf));
   }
 
@@ -5308,6 +5399,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     };
 
     const panel = el("div", { class: "th-panel" });
+    const posterNote = el("p", { class: "lab-h", id: "th-poster-note", role: "status" });
+    const showScene = (k) => {
+      scene = k;
+      sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+      if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
+    };
     const contrastLine = (p) => {
       const rows = [["Testo sul fondo", TH.contrast(p.ink, p.paper)], ["Testo secondario", TH.contrast(p.inkSoft, p.paper)], ["Accento nel testo", TH.contrast(p.accentInk, p.paper)]];
       return el("ul", { class: "contrast" }, rows.map(([t, v]) => el("li", { class: v < 4.5 ? "bad" : "" }, t + ": " + v.toFixed(1).replace(".", ",") + ":1" + (v < 4.5 ? ", poco leggibile da lontano" : ""))));
@@ -5363,7 +5460,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.bar, onchange: (e) => { Studio.snapshot(); th.bar = e.target.checked; changed(); } }), " Riga in alto con relatore e titolo"),
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.barCaps, onchange: (e) => { Studio.snapshot(); th.barCaps = e.target.checked; changed(); } }), " Riga in alto in maiuscolo"),
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.progress, onchange: (e) => { Studio.snapshot(); th.progress = e.target.checked; changed(); } }), " Barra di avanzamento in basso")),
-        group("Logo e sfondo",
+        group("Logo, sfondo e locandina",
           th.logo ? el("div", { class: "th-logo" },
             Studio.labeled("Posizione del logo", el("select", { class: "ed-select", onchange: (e) => { Studio.snapshot(); th.logo.pos = e.target.value; changed(); } },
               [["tr", "In alto a destra"], ["tl", "In alto a sinistra"], ["br", "In basso a destra"], ["bl", "In basso a sinistra"]].map(([v, t]) => el("option", { value: v, selected: (th.logo.pos || "tr") === v }, t)))),
@@ -5384,11 +5481,29 @@ https://github.com/nodeca/pako/blob/main/LICENSE
               if (!f) return;
               const media = await uploadMedia(f, "lo sfondo");
               if (media) { Studio.snapshot(); th.coverBg = { media, dim: 0.7 }; changed(true); }
-            } }))),
+            } })),
+          th.poster ? el("div", { class: "th-logo" },
+            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => { Studio.snapshot(); th.poster.show = e.target.value; changed(); showScene("conf"); } },
+              [["beside", "Accanto al titolo"], ["alone", "Da sola, a tutta altezza"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            el("button", { class: "link danger", id: "th-poster-off", onclick: () => { Studio.snapshot(); th.poster = null; posterNote.textContent = ""; changed(true); } }, "Togli la locandina"))
+            : [el("label", { class: "btn file" }, "Carica la locandina", el("input", { type: "file", id: "th-poster", class: "visually-hidden", accept: ".pdf,application/pdf,image/*", onchange: async (e) => {
+              const f = e.target.files[0]; e.target.value = "";
+              if (!f) return;
+              posterNote.textContent = "Preparo la locandina…";
+              try {
+                const { pages, ...poster } = await L.Decks.importPoster(f, conf);
+                Studio.snapshot();
+                th.poster = Object.assign(poster, { show: "beside" });
+                changed(true);
+                showScene("conf");
+                posterNote.textContent = pages > 1 ? "Il PDF ha " + pages + " pagine: sulla copertina va la prima." : "";
+              } catch (err) { posterNote.textContent = ""; Studio.toast(err.message, { error: true }); }
+            } })), el("p", { class: "lab-h" }, "PDF o immagine. Compare sulla copertina della conferenza, non sui titoli degli interventi.")],
+          posterNote),
         group("Riusare la grafica",
           el("div", { class: "actions" },
             el("button", { class: "link", id: "th-export", onclick: () => {
-              const copy = Object.assign({}, th, { logo: null, coverBg: null, fonts: [], format: "diglot.theme", version: 1 });
+              const copy = Object.assign({}, th, { logo: null, coverBg: null, poster: null, fonts: [], format: "diglot.theme", version: 1 });
               L.download(new Blob([JSON.stringify(copy, null, 1)], { type: "application/json" }), "grafica-" + L.slug(M.pick(conf.title, conf.languages[0])) + ".json");
             } }, "Esporta in JSON"),
             el("label", { class: "link" }, "Importa da JSON", el("input", { type: "file", id: "th-import", class: "visually-hidden", accept: ".json", onchange: async (e) => {
@@ -5398,7 +5513,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 const data = JSON.parse(await f.text());
                 if (!/^(diglot|conferenze|leggio)\.theme$/.test(data.format)) throw new Error("Questo JSON non è una grafica esportata da questo programma.");
                 Studio.snapshot();
-                conf.theme = Object.assign(TH.normalize(data), { logo: th.logo, coverBg: th.coverBg, fonts: th.fonts });
+                conf.theme = Object.assign(TH.normalize(data), { logo: th.logo, coverBg: th.coverBg, poster: th.poster, fonts: th.fonts });
                 Studio.touch();
                 Studio.render();
               } catch (err) { Studio.toast(err.message, { error: true }); }
@@ -5414,11 +5529,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     draw();
 
     const sceneButtons = el("div", { class: "th-scenes", role: "group", "aria-label": "Scena da provare" }, SCENES.map(([k, t]) =>
-      el("button", { class: "tab-btn" + (k === scene ? " on" : ""), "aria-pressed": k === scene, dataset: { scene: k }, onclick: (e) => {
-        scene = k;
-        sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-        if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
-      } }, t)));
+      el("button", { class: "tab-btn" + (k === scene ? " on" : ""), "aria-pressed": k === scene, dataset: { scene: k }, onclick: () => showScene(k) }, t)));
     const modeSwitch = el("button", { class: "tab-btn", id: "th-preview-mode", onclick: (e) => { previewMode = previewMode === "dark" ? "light" : "dark"; e.target.textContent = previewMode === "dark" ? "Anteprima: scuro" : "Anteprima: chiaro"; send(); } }, previewMode === "dark" ? "Anteprima: scuro" : "Anteprima: chiaro");
 
     main.append(el("div", { class: "th" }, panel,
@@ -5452,6 +5563,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return { nowKey, nextKey };
   }
 
+  // Se in sala è già in corso un intervento, la copertina gli va sopra e la regia lo sa: da lì si torna allo stesso punto.
+  function coverOverLast(conf) {
+    const key = "diglot-sync-" + conf.id;
+    try {
+      const last = JSON.parse(localStorage.getItem(key) || "null");
+      if (last && last.t && last.t !== "cover") localStorage.setItem(key, JSON.stringify(Object.assign(last, { scene: "conf", black: false, ts: Date.now(), src: "sala" })));
+    } catch (e) { /* senza memoria locale resta il link allo schermo */ }
+  }
+
   let resumeTimer = null;
   function resumeBox(conf) {
     const box = el("section", { class: "resume", id: "resume", "aria-label": "Riprendi" });
@@ -5460,12 +5580,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       let m = null;
       try { m = JSON.parse(localStorage.getItem("diglot-sync-" + conf.id) || "null"); } catch (e) { m = null; }
       if (!m || !m.t || Date.now() - m.ts > 12 * 3600e3) { box.classList.remove("on"); last = ""; return; }
-      const sig = m.t + "|" + m.i;
+      const sig = [m.t, m.i, m.scene].join("|");
       if (sig === last) return;
       last = sig;
       const f = m.t === "cover" ? null : M.find(conf, m.t);
       box.replaceChildren(
-        el("div", null, el("div", { class: "lab-t" }, "Ultima proiezione"), el("div", { class: "resume-what" }, m.t === "cover" ? "Copertina della conferenza" : f ? (f.talk.speaker || "Intervento") + ", schermata " + m.i : "Intervento tolto dal programma")),
+        el("div", null, el("div", { class: "lab-t" }, "Ultima proiezione"), el("div", { class: "resume-what" }, m.t === "cover" || m.scene === "conf" ? "Copertina della conferenza" : f ? (f.talk.speaker || "Intervento") + ", schermata " + m.i : "Intervento tolto dal programma")),
         el("div", { class: "actions" },
           el("a", { class: "btn primary", href: Studio.playUrl(m.t, { mode: "regia" }), target: "diglot-regia" }, "Riprendi in regia"),
           el("a", { class: "btn", href: Studio.playUrl(m.t), target: "diglot-screen" }, "Riapri lo schermo")));
@@ -5512,9 +5632,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         pending ? el("p", { class: "warn" }, pending + (pending === 1 ? " intervento senza testo o traduzione: " : " interventi senza testo o traduzione: ") + "sullo schermo andrà solo ciò che c'è. ", el("a", { href: "#/c/" + conf.id }, "Vedi cosa manca")) : null),
       resumeBox(conf),
       el("div", { class: "actions room-actions" },
-        el("a", { class: "btn primary", id: "open-cover", href: Studio.playUrl("cover"), target: "diglot-screen" }, "Copertina per pause e saluti"),
+        el("a", { class: "btn primary", id: "open-cover", href: Studio.playUrl("cover"), target: "diglot-screen", onclick: () => coverOverLast(conf) }, "Copertina per pause e saluti"),
         el("a", { class: "btn", href: Studio.playUrl("cover", { mode: "regia" }), target: "diglot-regia" }, "Regia della copertina"),
         el("a", { class: "btn", href: Studio.playUrl("cover", { teams: "1" }), onclick: (e) => { e.preventDefault(); window.open(e.currentTarget.href, "diglot-teams", "width=1280,height=720"); } }, "Finestra per Teams (16:9)")),
+      el("p", { class: "lab-h room-hint" }, "Durante un intervento la copertina torna sullo schermo anche dalla regia, con il tasto C. Premendolo di nuovo, o con «Avanti», si riprende dallo stesso punto."),
       conf.days.map((d, di) => el("section", { class: "room-day" },
         el("h2", { class: "day-label" }, M.dayLabel(d, code) || "Giornata " + (di + 1)),
         d.sessions.map((s) => sessionRow(conf, s, clock)))),
@@ -5613,7 +5734,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     document.title = "Aiuto · Diglot";
     const keys = [
       [["→", "D", "Spazio", "PagGiù"], "schermata successiva"], [["←", "A", "PagSu"], "schermata precedente"], [["numero", "Invio"], "vai a quella schermata"],
-      [["B"], "schermo nero; di nuovo B o «Avanti» per riaccenderlo"], [["S"], "a schermate oppure foglio unico che scorre"], [["V"], "in regia: pannelli oppure testo a fronte"],
+      [["B"], "schermo nero; di nuovo B o «Avanti» per riaccenderlo"], [["C"], "copertina della conferenza; di nuovo C o «Avanti» per tornare allo stesso punto"], [["S"], "a schermate oppure foglio unico che scorre"], [["V"], "in regia: pannelli oppure testo a fronte"],
       [["E"], "in regia: correggi la schermata corrente"], [["G", "numero"], "elenco di slide e citazioni, proietta quella col numero"], [["Maiusc", "G"], "le stesse di tutti i relatori: scegli il relatore, poi l'elemento"],
       [["J", "K"], "slide o pagina avanti e indietro"], [["L", "H"], "elemento successivo e precedente"], [["X"], "toglie slide o citazione"], [["M"], "mostra o nasconde le slide legate al testo"], [["O"], "cambia serie di slide"],
       [["Q"], "discussione: si scelgono i relatori; di nuovo Q o «Avanti» per toglierla"], [["T"], "chiaro o scuro"], [["+", "−"], "dimensione del testo"], [["F"], "sulla finestra dello schermo: schermo intero"], [["R"], "sulla finestra dello schermo: apre la regia"],
@@ -5623,7 +5744,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       el("p", { class: "tab-lead" }, "Il nome viene dai diglot, i libri con lo stesso testo in due lingue: qui le due lingue sono quella del relatore e quella sullo schermo."),
       el("section", { class: "help" },
         el("h2", null, "Preparare una conferenza"),
-        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo: l'anteprima usa il testo vero."),
+        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo e carichi la locandina: l'anteprima usa il testo vero."),
         el("h2", null, "Durante la conferenza"),
         el("p", null, "Vai in «In sala» e apri «Schermo»: trascina la finestra sul proiettore e premi F. «Regia» resta sul portatile. Le due finestre devono stare nello stesso browser, sullo stesso computer. Se un relatore cambia lingua all'ultimo, nella regia c'è «Lingua sullo schermo»."),
         el("h2", null, "Comandi da tastiera"),
@@ -5692,10 +5813,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     renderRoute();
   }
 
-  // Studio e schermo sono due mondi: passare dall'uno all'altro ricarica la pagina, così ognuno parte pulito.
+  // Ogni schermo e ogni regia partono puliti: anche un link che punta a una finestra già aperta la ricarica sul nuovo indirizzo.
   window.addEventListener("hashchange", () => {
-    if (isPlayer(parseRoute()) !== isPlayer(start)) { location.reload(); return; }
-    if (!isPlayer(start)) { routeChanged = true; Studio.flush(); renderRoute(); }
+    if (isPlayer(start) || isPlayer(parseRoute())) { location.reload(); return; }
+    routeChanged = true; Studio.flush(); renderRoute();
   });
 })(window.Diglot);
 </script>

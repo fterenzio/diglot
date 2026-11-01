@@ -48,9 +48,9 @@
     renderRoute();
   }
 
-  // Studio e schermo sono due mondi: passare dall'uno all'altro ricarica la pagina, così ognuno parte pulito.
+  // Ogni schermo e ogni regia partono puliti: anche un link che punta a una finestra già aperta la ricarica sul nuovo indirizzo.
   window.addEventListener("hashchange", () => {
-    if (isPlayer(parseRoute()) !== isPlayer(start)) { location.reload(); return; }
-    if (!isPlayer(start)) { routeChanged = true; Studio.flush(); renderRoute(); }
+    if (isPlayer(start) || isPlayer(parseRoute())) { location.reload(); return; }
+    routeChanged = true; Studio.flush(); renderRoute();
   });
 })(window.Diglot);

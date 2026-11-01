@@ -134,6 +134,7 @@
               M.eachTalk(copy, (t) => { t.id = L.uid("t"); t.decks.forEach((d) => d.slides.forEach((s) => { if (map[s.media]) s.media = map[s.media]; })); });
               if (copy.theme.logo && map[copy.theme.logo.media]) copy.theme.logo.media = map[copy.theme.logo.media];
               if (copy.theme.coverBg && map[copy.theme.coverBg.media]) copy.theme.coverBg.media = map[copy.theme.coverBg.media];
+              if (copy.theme.poster && map[copy.theme.poster.media]) copy.theme.poster.media = map[copy.theme.poster.media];
               copy.theme.fonts.forEach((f) => { if (map[f.media]) f.media = map[f.media]; });
               copy.title = Object.fromEntries(Object.entries(copy.title).map(([k, v]) => [k, v + " (copia)"]));
               await Store.putConference(copy);

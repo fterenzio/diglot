@@ -23,6 +23,7 @@
 .regia .blackbar { background: #111; color: #fff; border-radius: 6px; padding: 11px 16px; font-size: 14px; }
 .regia .blackbar kbd { background: #333; color: #fff; border-color: #555; }
 .regia .missbar { border: 1px solid var(--warn); color: var(--warn); border-radius: 6px; padding: 8px 14px; font-size: 13px; }
+.regia .coverbar { border: 2px solid var(--accent); border-radius: 6px; background: var(--accent-tint); padding: 11px 16px; font-size: 14px; }
 
 #panels { display: contents; }
 .regia .box { border: 1px solid var(--rule); border-radius: 8px; padding: 14px 18px; background: var(--paper); }
@@ -51,8 +52,8 @@
 .regia .tool { font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
 .regia .tool:hover { border-color: var(--ink); }
 .regia .tool:disabled { opacity: .5; cursor: not-allowed; }
-.regia #b-disc.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-.regia #b-disc.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
+.regia #b-disc.on, .regia #b-cover.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.regia #b-disc.on kbd, .regia #b-cover.on kbd { background: transparent; color: var(--paper); border-color: var(--ink-soft); }
 .regia #b-black.on { background: #111; border-color: #111; color: #fff; }
 .regia #b-black.on kbd { background: #333; color: #fff; border-color: #555; }
 .regia .sizes { display: inline-flex; gap: 4px; }

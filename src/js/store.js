@@ -124,6 +124,7 @@
     const th = conf.theme || {};
     if (th.logo && th.logo.media) out.push(th.logo.media);
     if (th.coverBg && th.coverBg.media) out.push(th.coverBg.media);
+    if (th.poster && th.poster.media) out.push(th.poster.media);
     (th.fonts || []).forEach((f) => { if (f.media) out.push(f.media); });
     return out;
   }

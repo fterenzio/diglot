@@ -50,5 +50,14 @@
       }
       throw new Error("Per le slide servono un PDF, un PowerPoint (.pptx) oppure una o più immagini. Più file insieme funzionano solo se sono tutte immagini.");
     },
+
+    async importPoster(file, conf) {
+      const ext = L.fileExt(file.name);
+      if (ext === "pdf") return L.Pdf.renderFirstPage(file, conf);
+      if (!IMG.has(ext)) throw new Error("Per la locandina servono un PDF o un'immagine.");
+      const size = await imageSize(file);
+      if (!size) throw new Error("«" + file.name + "» non è un'immagine leggibile.");
+      return { media: await L.Store.putMedia(file, conf.id, file.name), w: size.w, h: size.h, pages: 1 };
+    },
   };
 })(window.Diglot);

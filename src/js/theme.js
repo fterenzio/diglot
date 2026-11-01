@@ -24,7 +24,7 @@
       fontText: "EB Garamond", fontLabel: "Archivo", fonts: [],
       size: 1, lineHeight: 1.32, align: "left", margin: 7,
       bar: true, barCaps: true, progress: true, sideText: 42,
-      logo: null, coverBg: null,
+      logo: null, coverBg: null, poster: null,
     };
   }
   function normalize(t) {

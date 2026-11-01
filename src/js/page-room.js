@@ -19,6 +19,15 @@
     return { nowKey, nextKey };
   }
 
+  // Se in sala è già in corso un intervento, la copertina gli va sopra e la regia lo sa: da lì si torna allo stesso punto.
+  function coverOverLast(conf) {
+    const key = "diglot-sync-" + conf.id;
+    try {
+      const last = JSON.parse(localStorage.getItem(key) || "null");
+      if (last && last.t && last.t !== "cover") localStorage.setItem(key, JSON.stringify(Object.assign(last, { scene: "conf", black: false, ts: Date.now(), src: "sala" })));
+    } catch (e) { /* senza memoria locale resta il link allo schermo */ }
+  }
+
   let resumeTimer = null;
   function resumeBox(conf) {
     const box = el("section", { class: "resume", id: "resume", "aria-label": "Riprendi" });
@@ -27,12 +36,12 @@
       let m = null;
       try { m = JSON.parse(localStorage.getItem("diglot-sync-" + conf.id) || "null"); } catch (e) { m = null; }
       if (!m || !m.t || Date.now() - m.ts > 12 * 3600e3) { box.classList.remove("on"); last = ""; return; }
-      const sig = m.t + "|" + m.i;
+      const sig = [m.t, m.i, m.scene].join("|");
       if (sig === last) return;
       last = sig;
       const f = m.t === "cover" ? null : M.find(conf, m.t);
       box.replaceChildren(
-        el("div", null, el("div", { class: "lab-t" }, "Ultima proiezione"), el("div", { class: "resume-what" }, m.t === "cover" ? "Copertina della conferenza" : f ? (f.talk.speaker || "Intervento") + ", schermata " + m.i : "Intervento tolto dal programma")),
+        el("div", null, el("div", { class: "lab-t" }, "Ultima proiezione"), el("div", { class: "resume-what" }, m.t === "cover" || m.scene === "conf" ? "Copertina della conferenza" : f ? (f.talk.speaker || "Intervento") + ", schermata " + m.i : "Intervento tolto dal programma")),
         el("div", { class: "actions" },
           el("a", { class: "btn primary", href: Studio.playUrl(m.t, { mode: "regia" }), target: "diglot-regia" }, "Riprendi in regia"),
           el("a", { class: "btn", href: Studio.playUrl(m.t), target: "diglot-screen" }, "Riapri lo schermo")));
@@ -79,9 +88,10 @@
         pending ? el("p", { class: "warn" }, pending + (pending === 1 ? " intervento senza testo o traduzione: " : " interventi senza testo o traduzione: ") + "sullo schermo andrà solo ciò che c'è. ", el("a", { href: "#/c/" + conf.id }, "Vedi cosa manca")) : null),
       resumeBox(conf),
       el("div", { class: "actions room-actions" },
-        el("a", { class: "btn primary", id: "open-cover", href: Studio.playUrl("cover"), target: "diglot-screen" }, "Copertina per pause e saluti"),
+        el("a", { class: "btn primary", id: "open-cover", href: Studio.playUrl("cover"), target: "diglot-screen", onclick: () => coverOverLast(conf) }, "Copertina per pause e saluti"),
         el("a", { class: "btn", href: Studio.playUrl("cover", { mode: "regia" }), target: "diglot-regia" }, "Regia della copertina"),
         el("a", { class: "btn", href: Studio.playUrl("cover", { teams: "1" }), onclick: (e) => { e.preventDefault(); window.open(e.currentTarget.href, "diglot-teams", "width=1280,height=720"); } }, "Finestra per Teams (16:9)")),
+      el("p", { class: "lab-h room-hint" }, "Durante un intervento la copertina torna sullo schermo anche dalla regia, con il tasto C. Premendolo di nuovo, o con «Avanti», si riprende dallo stesso punto."),
       conf.days.map((d, di) => el("section", { class: "room-day" },
         el("h2", { class: "day-label" }, M.dayLabel(d, code) || "Giornata " + (di + 1)),
         d.sessions.map((s) => sessionRow(conf, s, clock)))),

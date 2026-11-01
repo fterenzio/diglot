@@ -158,6 +158,24 @@
     return out.map((p) => ({ text: T.markExplicitCues(p.text.replace(/\s+([.,])(?=\s|$)/g, "$1")), heading: p.heading, quote: p.indent > body * 1.5 || (p.chars > 120 && p.italicChars / p.chars > 0.9), page: p.page }));
   }
 
+  async function pageImage(doc, n, file, conf) {
+    const page = await doc.getPage(n);
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(4, 1920 / Math.max(base.width, base.height));
+    const vp = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    const blob = await L.Decks.canvasBlob(canvas);
+    const media = await L.Store.putMedia(blob, conf.id, file.name + " · " + n);
+    const out = { media, w: canvas.width, h: canvas.height };
+    canvas.width = canvas.height = 0;
+    page.cleanup();
+    return out;
+  }
+
   L.Pdf = {
     open,
     async read(file, progress) {
@@ -204,24 +222,18 @@
       const slides = [];
       for (let n = 1; n <= doc.numPages; n++) {
         if (progress) progress("Preparo la slide " + n + " di " + doc.numPages);
-        const page = await doc.getPage(n);
-        const base = page.getViewport({ scale: 1 });
-        const scale = Math.min(4, 1920 / Math.max(base.width, base.height));
-        const vp = page.getViewport({ scale });
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        const blob = await L.Decks.canvasBlob(canvas);
-        const media = await L.Store.putMedia(blob, conf.id, file.name + " · " + n);
-        slides.push({ media, w: canvas.width, h: canvas.height });
-        canvas.width = canvas.height = 0;
-        page.cleanup();
+        slides.push(await pageImage(doc, n, file, conf));
         await L.yieldUI();
       }
       await doc.destroy();
       return slides;
+    },
+    async renderFirstPage(file, conf) {
+      const doc = await open(file);
+      const out = await pageImage(doc, 1, file, conf);
+      out.pages = doc.numPages;
+      await doc.destroy();
+      return out;
     },
   };
 })(window.Diglot);

@@ -2,7 +2,7 @@
 
 Lettura: strumento di lavoro per chi organizza conferenze universitarie, nel linguaggio del programma stampato, ENERGY 1 / RHYTHM 2 / MOTION 1. Direzione in [DESIGN.md](../DESIGN.md).
 
-Le prove citate sono in `tests/e2e.mjs`: 134 controlli su Chrome senza finestra, tutti superati, elenco in fondo.
+Le prove citate sono in `tests/e2e.mjs`: 162 controlli su Chrome senza finestra, tutti superati, elenco in fondo.
 
 ## Blocco 1: regole assolute
 
@@ -33,7 +33,7 @@ Le prove citate sono in `tests/e2e.mjs`: 134 controlli su Chrome senza finestra,
 | R-01 sfumature | PASS | nessuna, colori piatti |
 | R-04 icone | PASS | nessuna libreria; solo i simboli di trasporto in regia, che indicano una direzione |
 | R-06 tipografia | PASS | Garamond per leggere, Archivo per consultare; maiuscolo solo nella testatina dello schermo, si spegne in Grafica |
-| R-07 sfondi | PASS | nessuna trama; lo sfondo delle copertine è facoltativo e dell'utente |
+| R-07 sfondi | PASS | nessuna trama; lo sfondo e la locandina delle copertine sono facoltativi e dell'utente |
 | R-08 frecce | PASS | solo «Indietro», «Avanti», ritorno al programma e direzione tra lingue |
 | R-09 etichette | PASS | solo stati reali: «In corso», «Prossima» |
 | R-10 vetro | PASS | nessuno |
@@ -108,6 +108,9 @@ PASS: nessun separatore decorativo o etichetta vuota; i commenti spiegano un vin
 - citazioni importate da un file
 - anteprima della grafica riceve i colori
 - logo caricato
+- locandina: file sbagliato rifiutato
+- locandina caricata dal PDF, in verticale
+- locandina: di un PDF di due pagine si usa la prima e lo si dice
 - in sala compaiono gli interventi
 - regia manda avanti lo schermo
 - slide accanto al testo dal primo cambio
@@ -120,10 +123,33 @@ PASS: nessun separatore decorativo o etichetta vuota; i commenti spiegano un vin
 - discussione sullo schermo
 - Maiusc+G elenca i relatori con materiali
 - Invio su un pulsante attiva il pulsante, non «Avanti»
+- C riproietta la copertina sullo schermo
+- sulla copertina riproiettata c'è la locandina
+- la regia dice che c'è la copertina
+- «Avanti» toglie la copertina e resta allo stesso punto
+- tornando dalla copertina la slide è come prima
+- il pulsante Copertina fa lo stesso del tasto
+- di nuovo C torna allo stesso punto
+- la copertina esce anche dal foglio unico
+- il pulsante della Sala riproietta la copertina anche con lo schermo già aperto
+- la regia sa che la Sala ha riproiettato la copertina
+- dalla copertina della Sala si torna allo stesso punto
 - nessun errore in schermo e regia
+- la regia della copertina la manda sullo schermo con C
 - regia della copertina senza errori
 - intervento di sole slide: lo schermo cambia intervento e mostra la slide
+- copertina da un altro intervento: lo schermo la mostra senza ricaricarsi
+- togliendola lo schermo passa all'intervento della regia
+- un link verso uno schermo già aperto lo cambia davvero
+- locandina accanto al titolo: dentro lo schermo, senza coprire il testo, con le sue proporzioni
+- sulla copertina va la prima pagina del PDF
+- un titolo lunghissimo si riduce e non finisce sotto la locandina
+- locandina da sola a tutta altezza, e lo schermo aperto si aggiorna
+- slide accanto al testo sulla copertina: va a tutto schermo, senza errori
 - esporta e reimporta con le slide
+- la locandina resta esportando e reimportando
+- duplicando la conferenza la locandina resta
+- locandina tolta
 - JSON dell'intervento: andata e ritorno
 - programma scaricato in JSON
 - esporta dal programma
@@ -167,6 +193,7 @@ PASS: nessun separatore decorativo o etichetta vuota; i commenti spiegano un vin
 - esporta dall'elenco
 - file col vecchio nome ancora importato
 - JSON col vecchio formato ancora accettato
+- il JSON del programma non porta con sé la locandina
 - file col secondo nome ancora importato
 - preferenze dei nomi precedenti conservate
 - file sbagliato rifiutato all'importazione
@@ -207,4 +234,5 @@ PASS: nessun separatore decorativo o etichetta vuota; i commenti spiegano un vin
 - nessuno sbordo a 1024px, scuro: convertitore
 - nessuno sbordo a 1024px, scuro: aiuto
 - regia a 375px senza sbordi
+- regia a 375px con la copertina sullo schermo, senza sbordi
 - nessun errore nella progettazione

@@ -37,6 +37,12 @@
     };
 
     const panel = el("div", { class: "th-panel" });
+    const posterNote = el("p", { class: "lab-h", id: "th-poster-note", role: "status" });
+    const showScene = (k) => {
+      scene = k;
+      sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+      if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
+    };
     const contrastLine = (p) => {
       const rows = [["Testo sul fondo", TH.contrast(p.ink, p.paper)], ["Testo secondario", TH.contrast(p.inkSoft, p.paper)], ["Accento nel testo", TH.contrast(p.accentInk, p.paper)]];
       return el("ul", { class: "contrast" }, rows.map(([t, v]) => el("li", { class: v < 4.5 ? "bad" : "" }, t + ": " + v.toFixed(1).replace(".", ",") + ":1" + (v < 4.5 ? ", poco leggibile da lontano" : ""))));
@@ -92,7 +98,7 @@
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.bar, onchange: (e) => { Studio.snapshot(); th.bar = e.target.checked; changed(); } }), " Riga in alto con relatore e titolo"),
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.barCaps, onchange: (e) => { Studio.snapshot(); th.barCaps = e.target.checked; changed(); } }), " Riga in alto in maiuscolo"),
           el("label", { class: "check" }, el("input", { type: "checkbox", checked: th.progress, onchange: (e) => { Studio.snapshot(); th.progress = e.target.checked; changed(); } }), " Barra di avanzamento in basso")),
-        group("Logo e sfondo",
+        group("Logo, sfondo e locandina",
           th.logo ? el("div", { class: "th-logo" },
             Studio.labeled("Posizione del logo", el("select", { class: "ed-select", onchange: (e) => { Studio.snapshot(); th.logo.pos = e.target.value; changed(); } },
               [["tr", "In alto a destra"], ["tl", "In alto a sinistra"], ["br", "In basso a destra"], ["bl", "In basso a sinistra"]].map(([v, t]) => el("option", { value: v, selected: (th.logo.pos || "tr") === v }, t)))),
@@ -113,11 +119,29 @@
               if (!f) return;
               const media = await uploadMedia(f, "lo sfondo");
               if (media) { Studio.snapshot(); th.coverBg = { media, dim: 0.7 }; changed(true); }
-            } }))),
+            } })),
+          th.poster ? el("div", { class: "th-logo" },
+            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => { Studio.snapshot(); th.poster.show = e.target.value; changed(); showScene("conf"); } },
+              [["beside", "Accanto al titolo"], ["alone", "Da sola, a tutta altezza"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            el("button", { class: "link danger", id: "th-poster-off", onclick: () => { Studio.snapshot(); th.poster = null; posterNote.textContent = ""; changed(true); } }, "Togli la locandina"))
+            : [el("label", { class: "btn file" }, "Carica la locandina", el("input", { type: "file", id: "th-poster", class: "visually-hidden", accept: ".pdf,application/pdf,image/*", onchange: async (e) => {
+              const f = e.target.files[0]; e.target.value = "";
+              if (!f) return;
+              posterNote.textContent = "Preparo la locandina…";
+              try {
+                const { pages, ...poster } = await L.Decks.importPoster(f, conf);
+                Studio.snapshot();
+                th.poster = Object.assign(poster, { show: "beside" });
+                changed(true);
+                showScene("conf");
+                posterNote.textContent = pages > 1 ? "Il PDF ha " + pages + " pagine: sulla copertina va la prima." : "";
+              } catch (err) { posterNote.textContent = ""; Studio.toast(err.message, { error: true }); }
+            } })), el("p", { class: "lab-h" }, "PDF o immagine. Compare sulla copertina della conferenza, non sui titoli degli interventi.")],
+          posterNote),
         group("Riusare la grafica",
           el("div", { class: "actions" },
             el("button", { class: "link", id: "th-export", onclick: () => {
-              const copy = Object.assign({}, th, { logo: null, coverBg: null, fonts: [], format: "diglot.theme", version: 1 });
+              const copy = Object.assign({}, th, { logo: null, coverBg: null, poster: null, fonts: [], format: "diglot.theme", version: 1 });
               L.download(new Blob([JSON.stringify(copy, null, 1)], { type: "application/json" }), "grafica-" + L.slug(M.pick(conf.title, conf.languages[0])) + ".json");
             } }, "Esporta in JSON"),
             el("label", { class: "link" }, "Importa da JSON", el("input", { type: "file", id: "th-import", class: "visually-hidden", accept: ".json", onchange: async (e) => {
@@ -127,7 +151,7 @@
                 const data = JSON.parse(await f.text());
                 if (!/^(diglot|conferenze|leggio)\.theme$/.test(data.format)) throw new Error("Questo JSON non è una grafica esportata da questo programma.");
                 Studio.snapshot();
-                conf.theme = Object.assign(TH.normalize(data), { logo: th.logo, coverBg: th.coverBg, fonts: th.fonts });
+                conf.theme = Object.assign(TH.normalize(data), { logo: th.logo, coverBg: th.coverBg, poster: th.poster, fonts: th.fonts });
                 Studio.touch();
                 Studio.render();
               } catch (err) { Studio.toast(err.message, { error: true }); }
@@ -143,11 +167,7 @@
     draw();
 
     const sceneButtons = el("div", { class: "th-scenes", role: "group", "aria-label": "Scena da provare" }, SCENES.map(([k, t]) =>
-      el("button", { class: "tab-btn" + (k === scene ? " on" : ""), "aria-pressed": k === scene, dataset: { scene: k }, onclick: (e) => {
-        scene = k;
-        sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
-        if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
-      } }, t)));
+      el("button", { class: "tab-btn" + (k === scene ? " on" : ""), "aria-pressed": k === scene, dataset: { scene: k }, onclick: () => showScene(k) }, t)));
     const modeSwitch = el("button", { class: "tab-btn", id: "th-preview-mode", onclick: (e) => { previewMode = previewMode === "dark" ? "light" : "dark"; e.target.textContent = previewMode === "dark" ? "Anteprima: scuro" : "Anteprima: chiaro"; send(); } }, previewMode === "dark" ? "Anteprima: scuro" : "Anteprima: chiaro");
 
     main.append(el("div", { class: "th" }, panel,

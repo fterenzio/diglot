@@ -41,10 +41,10 @@ Lo produce il Convertitore e «Scarica JSON»; si ricarica dagli stessi punti.
 
 ## Conferenza (`diglot.conference`)
 
-«Scarica il programma in JSON» salva programma, testi e grafica, senza i file delle slide, del logo e dei caratteri. Importandolo, le slide vanno ricaricate.
+«Scarica il programma in JSON» salva programma, testi e grafica, senza i file delle slide, della locandina, del logo e dei caratteri. Importandolo, le slide vanno ricaricate.
 
 Per spostare tutto serve «Esporta»: il file `.diglot` è uno ZIP con `conference.json`, `media.json` e la cartella `media/`.
 
 ## Grafica (`diglot.theme`)
 
-Colori, caratteri e impostazioni dello schermo, da riusare in un'altra conferenza dalla pagina Grafica. Logo, sfondo e caratteri caricati non sono inclusi.
+Colori, caratteri e impostazioni dello schermo, da riusare in un'altra conferenza dalla pagina Grafica. Logo, sfondo, locandina e caratteri caricati non sono inclusi.

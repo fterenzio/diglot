@@ -31,6 +31,7 @@
         Studio.labeled("Luogo", Studio.field({ value: conf.place, placeholder: "Città, sede", set: (v) => { conf.place = v; } })),
         Studio.labeled("Date sulla copertina", Studio.field({ value: conf.datesText, placeholder: M.datesLabel(Object.assign({}, conf, { datesText: "" }), l[0]) || "Si ricavano dai giorni", set: (v) => { conf.datesText = v; } })),
         l.map((c) => Studio.labeled("Dicitura sopra il titolo (" + M.langName(c) + ")", Studio.field({ value: conf.kicker[c], placeholder: "Facoltativa", lang: c, set: (v) => { conf.kicker[c] = v; } })))),
+      el("p", { class: "lab-h conf-more" }, "Locandina, logo e sfondo della copertina si caricano in ", el("a", { href: "#/c/" + conf.id + "/grafica" }, "Grafica"), "."),
       langHeader(conf));
   }
 

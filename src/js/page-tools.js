@@ -88,7 +88,7 @@
     document.title = "Aiuto · Diglot";
     const keys = [
       [["→", "D", "Spazio", "PagGiù"], "schermata successiva"], [["←", "A", "PagSu"], "schermata precedente"], [["numero", "Invio"], "vai a quella schermata"],
-      [["B"], "schermo nero; di nuovo B o «Avanti» per riaccenderlo"], [["S"], "a schermate oppure foglio unico che scorre"], [["V"], "in regia: pannelli oppure testo a fronte"],
+      [["B"], "schermo nero; di nuovo B o «Avanti» per riaccenderlo"], [["C"], "copertina della conferenza; di nuovo C o «Avanti» per tornare allo stesso punto"], [["S"], "a schermate oppure foglio unico che scorre"], [["V"], "in regia: pannelli oppure testo a fronte"],
       [["E"], "in regia: correggi la schermata corrente"], [["G", "numero"], "elenco di slide e citazioni, proietta quella col numero"], [["Maiusc", "G"], "le stesse di tutti i relatori: scegli il relatore, poi l'elemento"],
       [["J", "K"], "slide o pagina avanti e indietro"], [["L", "H"], "elemento successivo e precedente"], [["X"], "toglie slide o citazione"], [["M"], "mostra o nasconde le slide legate al testo"], [["O"], "cambia serie di slide"],
       [["Q"], "discussione: si scelgono i relatori; di nuovo Q o «Avanti» per toglierla"], [["T"], "chiaro o scuro"], [["+", "−"], "dimensione del testo"], [["F"], "sulla finestra dello schermo: schermo intero"], [["R"], "sulla finestra dello schermo: apre la regia"],
@@ -98,7 +98,7 @@
       el("p", { class: "tab-lead" }, "Il nome viene dai diglot, i libri con lo stesso testo in due lingue: qui le due lingue sono quella del relatore e quella sullo schermo."),
       el("section", { class: "help" },
         el("h2", null, "Preparare una conferenza"),
-        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo: l'anteprima usa il testo vero."),
+        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo e carichi la locandina: l'anteprima usa il testo vero."),
         el("h2", null, "Durante la conferenza"),
         el("p", null, "Vai in «In sala» e apri «Schermo»: trascina la finestra sul proiettore e premi F. «Regia» resta sul portatile. Le due finestre devono stare nello stesso browser, sullo stesso computer. Se un relatore cambia lingua all'ultimo, nella regia c'è «Lingua sullo schermo»."),
         el("h2", null, "Comandi da tastiera"),

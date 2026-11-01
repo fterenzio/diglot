@@ -52,6 +52,8 @@ html.write_text("<!doctype html><meta charset=utf-8>" + css + "".join(f"<div cla
 subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--print-to-pdf={F / 'colonne.pdf'}", "file://" + str(html)], capture_output=True)
 html.write_text("<!doctype html><meta charset=utf-8><style>@page{size:A5 landscape;margin:0}section{box-sizing:border-box;height:138mm;break-after:page;font:40pt Helvetica;padding:30mm}section:last-child{break-after:auto}</style><section>Slide uno</section><section>Slide due</section><section>Slide tre</section>", encoding="utf-8")
 subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--print-to-pdf={F / 'slide.pdf'}", "file://" + str(html)], capture_output=True)
+html.write_text("<!doctype html><meta charset=utf-8><style>@page{size:A4;margin:0}html,body{margin:0}section{box-sizing:border-box;height:290mm;overflow:hidden;break-after:page;padding:30mm;font:34pt Georgia;background:#1f3b4d;color:#fff;-webkit-print-color-adjust:exact}section+section{background:#eee;color:#222;break-after:auto}</style><section>Locandina di prova<br>Aula magna</section><section>Retro della locandina</section>", encoding="utf-8")
+subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-pdf-header-footer", f"--print-to-pdf={F / 'locandina.pdf'}", "file://" + str(html)], capture_output=True)
 html.unlink()
 
 with zipfile.ZipFile(F / "vecchio.leggio", "w") as z:

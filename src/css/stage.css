@@ -45,6 +45,22 @@
 .cover.conf .lead { font-size: 8vh; line-height: 1.08; margin: 3vh 0 1.5vh; }
 .cover.conf .rule { margin-top: 3vh; }
 
+/* Locandina sulla copertina: la larghezza viene dalle proporzioni del file */
+.screen.poster-beside { --poster-w: min(46vw, calc(90vh * var(--poster-r, .7))); }
+.screen.poster-alone { --poster-w: min(100vw, calc(100vh * var(--poster-r, .7))); }
+.screen.poster-beside .stage { top: 5vh; bottom: 5vh; right: 4vw; }
+.screen.poster-alone .stage { inset: 0; justify-content: center; }
+.screen .poster { width: var(--poster-w); aspect-ratio: var(--poster-r, .7); margin: 0; background: #fff; flex-shrink: 0; }
+.screen .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.screen.poster-beside .poster { border: 1px solid var(--rule); }
+.screen .conf-poster { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 4vw; align-items: center; }
+.conf-poster .cover.conf .pre { font-size: calc(3.6vh * var(--k, 1)); }
+.conf-poster .cover.conf .pre2 { font-size: calc(3.2vh * var(--k, 1)); }
+.conf-poster .cover.conf .big { font-size: calc(10vh * var(--k, 1)); }
+.conf-poster .cover.conf .lead { font-size: calc(6.4vh * var(--k, 1)); }
+.screen.poster-beside .logo.tr, .screen.poster-beside .logo.br { right: calc(var(--poster-w) + 8vw); }
+.screen.poster-alone .logo, .screen.poster-alone.on-cover .logo.cover-only { display: none; }
+
 /* Discussione: dimensioni in em, il blocco intero si adatta al numero di relatori */
 .screen.disc-mode .sheet { display: none !important; }
 .screen.disc-mode .stage { display: flex !important; }
