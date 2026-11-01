@@ -45,20 +45,23 @@
 .cover.conf .lead { font-size: 8vh; line-height: 1.08; margin: 3vh 0 1.5vh; }
 .cover.conf .rule { margin-top: 3vh; }
 
-/* Locandina sulla copertina: la larghezza viene dalle proporzioni del file */
-.screen.poster-beside { --poster-w: min(46vw, calc(90vh * var(--poster-r, .7))); }
-.screen.poster-alone { --poster-w: min(100vw, calc(100vh * var(--poster-r, .7))); }
-.screen.poster-beside .stage { top: 5vh; bottom: 5vh; right: 4vw; }
-.screen.poster-alone .stage { inset: 0; justify-content: center; }
-.screen .poster { width: var(--poster-w); aspect-ratio: var(--poster-r, .7); margin: 0; background: #fff; flex-shrink: 0; }
+/* Locandina sulla copertina: le proporzioni vengono dal file, dimensione e posizione dalla pagina Grafica */
+.screen.poster-beside { --poster-w: min(70vw, calc(var(--poster-s, 90) * 1vh * var(--poster-r, .7))); --poster-m: 4vw; }
+.screen.poster-alone { --poster-w: min(100vw, calc(var(--poster-s, 100) * 1vh * var(--poster-r, .7))); --poster-m: 0vw; }
+.screen.poster-beside .stage, .screen.poster-alone .stage { inset: 0; }
+.screen .poster {
+  position: absolute; margin: 0; background: #fff; width: var(--poster-w); aspect-ratio: var(--poster-r, .7);
+  left: calc(var(--poster-m) + (100vw - 2 * var(--poster-m) - var(--poster-w)) * var(--poster-x, .5));
+  top: calc((100vh - var(--poster-w) / var(--poster-r, .7)) * var(--poster-y, .5));
+}
 .screen .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .screen.poster-beside .poster { border: 1px solid var(--rule); }
-.screen .conf-poster { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 4vw; align-items: center; }
+.screen .conf-poster { position: absolute; inset: 0; }
+.conf-poster .cover.conf { position: absolute; top: 50%; transform: translateY(-50%); width: auto; }
 .conf-poster .cover.conf .pre { font-size: calc(3.6vh * var(--k, 1)); }
 .conf-poster .cover.conf .pre2 { font-size: calc(3.2vh * var(--k, 1)); }
 .conf-poster .cover.conf .big { font-size: calc(10vh * var(--k, 1)); }
 .conf-poster .cover.conf .lead { font-size: calc(6.4vh * var(--k, 1)); }
-.screen.poster-beside .logo.tr, .screen.poster-beside .logo.br { right: calc(var(--poster-w) + 8vw); }
 .screen.poster-alone .logo, .screen.poster-alone.on-cover .logo.cover-only { display: none; }
 
 /* Discussione: dimensioni in em, il blocco intero si adatta al numero di relatori */

@@ -35,6 +35,13 @@
     return out;
   }
 
+  // Se non sono state scelte, valgono le misure della disposizione: 82 tiene una locandina orizzontale a circa metà di uno schermo 16:9.
+  function posterLayout(p) {
+    const alone = p.show === "alone", r = (p.w || 7) / (p.h || 10);
+    const pick = (v, fallback) => (v === undefined || v === null || isNaN(+v) ? fallback : Math.max(0, Math.min(100, +v)));
+    return { alone, r, size: Math.max(20, pick(p.size, alone ? 100 : Math.min(90, Math.round(82 / r)))), x: pick(p.x, alone ? 50 : 100), y: pick(p.y, 50) };
+  }
+
   function parse(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
     const n = m ? parseInt(m[1], 16) : 0;
@@ -108,5 +115,5 @@
     s.setProperty("--side-cols", side + "fr " + (100 - side) + "fr");
   }
 
-  L.Theme = { PRESETS, FONTS, defaults, normalize, palette, contrast, mix, apply, loadCustomFonts };
+  L.Theme = { PRESETS, FONTS, defaults, normalize, posterLayout, palette, contrast, mix, apply, loadCustomFonts };
 })(window.Diglot);

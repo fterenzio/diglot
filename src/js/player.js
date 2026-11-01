@@ -169,11 +169,17 @@
       document.querySelector(".foot").style.visibility = "hidden";
       stage.dataset.key = "";
       stage.innerHTML = confHTML();
-      // Accanto alla locandina il titolo ha meno spazio: si riduce quanto basta.
       const text = stage.querySelector(".conf-poster .cover");
       if (!text) return;
+      // Il titolo va dal lato della locandina dove c'è più spazio e si riduce quanto basta; se non ne resta, si toglie.
+      const fig = stage.querySelector(".poster").getBoundingClientRect(), W = window.innerWidth, gap = W * 0.04, edge = W * conf.theme.margin / 100;
+      const onLeft = fig.left >= W - fig.right, from = onLeft ? edge : fig.right + gap, to = onLeft ? fig.left - gap : W - edge;
+      if (to - from < W * 0.14) { text.style.display = "none"; return; }
+      text.style.left = from + "px"; text.style.width = to - from + "px";
+      const logo = document.querySelector(".screen .logo");
+      if (logo) { if (/\b[tb]r\b/.test(logo.className)) logo.style.right = W - to + "px"; else logo.style.left = from + "px"; }
       let k = 1;
-      while ((text.scrollHeight > stage.clientHeight || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
+      while ((text.scrollHeight > window.innerHeight * 0.92 || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
     }
 
     function textBase(frac) { return window.innerHeight * frac * state.scale * (conf.theme.size || 1); }
@@ -355,6 +361,7 @@
       if (th.logo && th.logo.media) {
         if (!logo) { logo = document.createElement("img"); logo.alt = ""; scr.append(logo); }
         logo.className = "logo " + (th.logo.pos || "tr") + (th.logo.coverOnly ? " cover-only" : "");
+        logo.style.left = logo.style.right = "";
         logo.style.setProperty("--logo-h", (th.logo.size || 7) + "vh");
         Store.mediaURL(th.logo.media).then((u) => { if (logo.getAttribute("src") !== u) logo.src = u; });
       } else if (logo) logo.remove();
@@ -383,7 +390,11 @@
       const onConf = onScene || (sl.type === "conf" && !cp && !state.disc), pos = onConf && conf.theme.poster && conf.theme.poster.media ? conf.theme.poster : null;
       scr.classList.toggle("poster-beside", !!pos && pos.show !== "alone");
       scr.classList.toggle("poster-alone", !!pos && pos.show === "alone");
-      if (pos) scr.style.setProperty("--poster-r", (pos.w || 7) / (pos.h || 10));
+      if (pos) {
+        const g = L.Theme.posterLayout(pos);
+        scr.style.setProperty("--poster-r", g.r); scr.style.setProperty("--poster-s", g.size);
+        scr.style.setProperty("--poster-x", g.x / 100); scr.style.setProperty("--poster-y", g.y / 100);
+      }
       document.querySelector(".stage").classList.remove("disc-top");
       if (onConf) { renderConf(); return; }
       if (state.disc && !cp) { renderDiscussion(); return; }

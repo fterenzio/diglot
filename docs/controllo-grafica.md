@@ -2,7 +2,7 @@
 
 Lettura: strumento di lavoro per chi organizza conferenze universitarie, nel linguaggio del programma stampato, ENERGY 1 / RHYTHM 2 / MOTION 1. Direzione in [DESIGN.md](../DESIGN.md).
 
-Le prove citate sono in `tests/e2e.mjs`: 162 controlli su Chrome senza finestra, tutti superati, elenco in fondo.
+Le prove citate sono in `tests/e2e.mjs`: 174 controlli su Chrome senza finestra, tutti superati, elenco in fondo.
 
 ## Blocco 1: regole assolute
 
@@ -145,9 +145,21 @@ PASS: nessun separatore decorativo o etichetta vuota; i commenti spiegano un vin
 - sulla copertina va la prima pagina del PDF
 - un titolo lunghissimo si riduce e non finisce sotto la locandina
 - locandina da sola a tutta altezza, e lo schermo aperto si aggiorna
+- da sola: altezza e posizione si regolano
+- cambiando disposizione tornano le misure iniziali
+- le misure iniziali non cambiano: a destra, centrata, alta il 90%
+- il logo non finisce sopra la locandina
+- accanto al titolo: l'altezza si regola
+- regolando la locandina l'anteprima passa alla copertina
+- la locandina va a sinistra e il titolo passa dall'altro lato
+- il logo resta fuori dalla locandina anche a sinistra
+- la locandina va tutta in alto
+- la locandina va tutta in basso
+- se accanto non resta spazio il titolo si toglie, senza errori
+- con la locandina a metà il titolo non le finisce sotto
 - slide accanto al testo sulla copertina: va a tutto schermo, senza errori
 - esporta e reimporta con le slide
-- la locandina resta esportando e reimportando
+- la locandina resta esportando e reimportando, con dimensione e posizione
 - duplicando la conferenza la locandina resta
 - locandina tolta
 - JSON dell'intervento: andata e ritorno

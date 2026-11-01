@@ -215,20 +215,23 @@ kbd { font-family: var(--font-label); font-size: .85em; font-weight: 600; border
 .cover.conf .lead { font-size: 8vh; line-height: 1.08; margin: 3vh 0 1.5vh; }
 .cover.conf .rule { margin-top: 3vh; }
 
-/* Locandina sulla copertina: la larghezza viene dalle proporzioni del file */
-.screen.poster-beside { --poster-w: min(46vw, calc(90vh * var(--poster-r, .7))); }
-.screen.poster-alone { --poster-w: min(100vw, calc(100vh * var(--poster-r, .7))); }
-.screen.poster-beside .stage { top: 5vh; bottom: 5vh; right: 4vw; }
-.screen.poster-alone .stage { inset: 0; justify-content: center; }
-.screen .poster { width: var(--poster-w); aspect-ratio: var(--poster-r, .7); margin: 0; background: #fff; flex-shrink: 0; }
+/* Locandina sulla copertina: le proporzioni vengono dal file, dimensione e posizione dalla pagina Grafica */
+.screen.poster-beside { --poster-w: min(70vw, calc(var(--poster-s, 90) * 1vh * var(--poster-r, .7))); --poster-m: 4vw; }
+.screen.poster-alone { --poster-w: min(100vw, calc(var(--poster-s, 100) * 1vh * var(--poster-r, .7))); --poster-m: 0vw; }
+.screen.poster-beside .stage, .screen.poster-alone .stage { inset: 0; }
+.screen .poster {
+  position: absolute; margin: 0; background: #fff; width: var(--poster-w); aspect-ratio: var(--poster-r, .7);
+  left: calc(var(--poster-m) + (100vw - 2 * var(--poster-m) - var(--poster-w)) * var(--poster-x, .5));
+  top: calc((100vh - var(--poster-w) / var(--poster-r, .7)) * var(--poster-y, .5));
+}
 .screen .poster img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .screen.poster-beside .poster { border: 1px solid var(--rule); }
-.screen .conf-poster { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 4vw; align-items: center; }
+.screen .conf-poster { position: absolute; inset: 0; }
+.conf-poster .cover.conf { position: absolute; top: 50%; transform: translateY(-50%); width: auto; }
 .conf-poster .cover.conf .pre { font-size: calc(3.6vh * var(--k, 1)); }
 .conf-poster .cover.conf .pre2 { font-size: calc(3.2vh * var(--k, 1)); }
 .conf-poster .cover.conf .big { font-size: calc(10vh * var(--k, 1)); }
 .conf-poster .cover.conf .lead { font-size: calc(6.4vh * var(--k, 1)); }
-.screen.poster-beside .logo.tr, .screen.poster-beside .logo.br { right: calc(var(--poster-w) + 8vw); }
 .screen.poster-alone .logo, .screen.poster-alone.on-cover .logo.cover-only { display: none; }
 
 /* Discussione: dimensioni in em, il blocco intero si adatta al numero di relatori */
@@ -1256,6 +1259,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return out;
   }
 
+  // Se non sono state scelte, valgono le misure della disposizione: 82 tiene una locandina orizzontale a circa metà di uno schermo 16:9.
+  function posterLayout(p) {
+    const alone = p.show === "alone", r = (p.w || 7) / (p.h || 10);
+    const pick = (v, fallback) => (v === undefined || v === null || isNaN(+v) ? fallback : Math.max(0, Math.min(100, +v)));
+    return { alone, r, size: Math.max(20, pick(p.size, alone ? 100 : Math.min(90, Math.round(82 / r)))), x: pick(p.x, alone ? 50 : 100), y: pick(p.y, 50) };
+  }
+
   function parse(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
     const n = m ? parseInt(m[1], 16) : 0;
@@ -1329,7 +1339,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     s.setProperty("--side-cols", side + "fr " + (100 - side) + "fr");
   }
 
-  L.Theme = { PRESETS, FONTS, defaults, normalize, palette, contrast, mix, apply, loadCustomFonts };
+  L.Theme = { PRESETS, FONTS, defaults, normalize, posterLayout, palette, contrast, mix, apply, loadCustomFonts };
 })(window.Diglot);
 </script>
 <script>(function (L) {
@@ -3337,11 +3347,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       document.querySelector(".foot").style.visibility = "hidden";
       stage.dataset.key = "";
       stage.innerHTML = confHTML();
-      // Accanto alla locandina il titolo ha meno spazio: si riduce quanto basta.
       const text = stage.querySelector(".conf-poster .cover");
       if (!text) return;
+      // Il titolo va dal lato della locandina dove c'è più spazio e si riduce quanto basta; se non ne resta, si toglie.
+      const fig = stage.querySelector(".poster").getBoundingClientRect(), W = window.innerWidth, gap = W * 0.04, edge = W * conf.theme.margin / 100;
+      const onLeft = fig.left >= W - fig.right, from = onLeft ? edge : fig.right + gap, to = onLeft ? fig.left - gap : W - edge;
+      if (to - from < W * 0.14) { text.style.display = "none"; return; }
+      text.style.left = from + "px"; text.style.width = to - from + "px";
+      const logo = document.querySelector(".screen .logo");
+      if (logo) { if (/\b[tb]r\b/.test(logo.className)) logo.style.right = W - to + "px"; else logo.style.left = from + "px"; }
       let k = 1;
-      while ((text.scrollHeight > stage.clientHeight || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
+      while ((text.scrollHeight > window.innerHeight * 0.92 || text.scrollWidth > text.clientWidth) && k > 0.4) { k *= 0.95; text.style.setProperty("--k", k); }
     }
 
     function textBase(frac) { return window.innerHeight * frac * state.scale * (conf.theme.size || 1); }
@@ -3523,6 +3539,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (th.logo && th.logo.media) {
         if (!logo) { logo = document.createElement("img"); logo.alt = ""; scr.append(logo); }
         logo.className = "logo " + (th.logo.pos || "tr") + (th.logo.coverOnly ? " cover-only" : "");
+        logo.style.left = logo.style.right = "";
         logo.style.setProperty("--logo-h", (th.logo.size || 7) + "vh");
         Store.mediaURL(th.logo.media).then((u) => { if (logo.getAttribute("src") !== u) logo.src = u; });
       } else if (logo) logo.remove();
@@ -3551,7 +3568,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const onConf = onScene || (sl.type === "conf" && !cp && !state.disc), pos = onConf && conf.theme.poster && conf.theme.poster.media ? conf.theme.poster : null;
       scr.classList.toggle("poster-beside", !!pos && pos.show !== "alone");
       scr.classList.toggle("poster-alone", !!pos && pos.show === "alone");
-      if (pos) scr.style.setProperty("--poster-r", (pos.w || 7) / (pos.h || 10));
+      if (pos) {
+        const g = L.Theme.posterLayout(pos);
+        scr.style.setProperty("--poster-r", g.r); scr.style.setProperty("--poster-s", g.size);
+        scr.style.setProperty("--poster-x", g.x / 100); scr.style.setProperty("--poster-y", g.y / 100);
+      }
       document.querySelector(".stage").classList.remove("disc-top");
       if (onConf) { renderConf(); return; }
       if (state.disc && !cp) { renderDiscussion(); return; }
@@ -5405,6 +5426,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
       if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
     };
+    const toCover = () => { if (scene !== "conf") showScene("conf"); };
+    const placeName = (v, start, end) => (v === 0 ? start : v === 100 ? end : v === 50 ? "al centro" : v + "%");
     const contrastLine = (p) => {
       const rows = [["Testo sul fondo", TH.contrast(p.ink, p.paper)], ["Testo secondario", TH.contrast(p.inkSoft, p.paper)], ["Accento nel testo", TH.contrast(p.accentInk, p.paper)]];
       return el("ul", { class: "contrast" }, rows.map(([t, v]) => el("li", { class: v < 4.5 ? "bad" : "" }, t + ": " + v.toFixed(1).replace(".", ",") + ":1" + (v < 4.5 ? ", poco leggibile da lontano" : ""))));
@@ -5425,6 +5448,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     };
 
     function draw() {
+      const pl = th.poster ? TH.posterLayout(th.poster) : null;
       panel.replaceChildren(
         group("Colori",
           el("div", { class: "presets", role: "group", "aria-label": "Combinazioni pronte" }, Object.entries(TH.PRESETS).map(([key, pr]) =>
@@ -5483,8 +5507,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
               if (media) { Studio.snapshot(); th.coverBg = { media, dim: 0.7 }; changed(true); }
             } })),
           th.poster ? el("div", { class: "th-logo" },
-            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => { Studio.snapshot(); th.poster.show = e.target.value; changed(); showScene("conf"); } },
-              [["beside", "Accanto al titolo"], ["alone", "Da sola, a tutta altezza"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => {
+              Studio.snapshot();
+              th.poster.show = e.target.value;
+              delete th.poster.size; delete th.poster.x; delete th.poster.y;
+              changed(true); toCover();
+              document.getElementById("th-poster-show").focus();
+            } },
+              [["beside", "Accanto al titolo"], ["alone", "Da sola"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            Studio.labeled("Altezza della locandina: " + pl.size + "%", el("input", { type: "range", id: "th-poster-size", min: 20, max: 100, step: 1, value: pl.size, oninput: (e) => { begin(); th.poster.size = +e.target.value; e.target.previousSibling.textContent = "Altezza della locandina: " + th.poster.size + "%"; changed(); toCover(); } })),
+            Studio.labeled("Posizione orizzontale: " + placeName(pl.x, "tutta a sinistra", "tutta a destra"), el("input", { type: "range", id: "th-poster-x", min: 0, max: 100, step: 1, value: pl.x, oninput: (e) => { begin(); th.poster.x = +e.target.value; e.target.previousSibling.textContent = "Posizione orizzontale: " + placeName(th.poster.x, "tutta a sinistra", "tutta a destra"); changed(); toCover(); } }), pl.alone ? null : "Il titolo si sposta dal lato dove resta più spazio."),
+            Studio.labeled("Posizione verticale: " + placeName(pl.y, "tutta in alto", "tutta in basso"), el("input", { type: "range", id: "th-poster-y", min: 0, max: 100, step: 1, value: pl.y, oninput: (e) => { begin(); th.poster.y = +e.target.value; e.target.previousSibling.textContent = "Posizione verticale: " + placeName(th.poster.y, "tutta in alto", "tutta in basso"); changed(); toCover(); } })),
             el("button", { class: "link danger", id: "th-poster-off", onclick: () => { Studio.snapshot(); th.poster = null; posterNote.textContent = ""; changed(true); } }, "Togli la locandina"))
             : [el("label", { class: "btn file" }, "Carica la locandina", el("input", { type: "file", id: "th-poster", class: "visually-hidden", accept: ".pdf,application/pdf,image/*", onchange: async (e) => {
               const f = e.target.files[0]; e.target.value = "";
@@ -5744,7 +5777,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       el("p", { class: "tab-lead" }, "Il nome viene dai diglot, i libri con lo stesso testo in due lingue: qui le due lingue sono quella del relatore e quella sullo schermo."),
       el("section", { class: "help" },
         el("h2", null, "Preparare una conferenza"),
-        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo e carichi la locandina: l'anteprima usa il testo vero."),
+        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo, carichi la locandina e ne decidi dimensione e posizione: l'anteprima usa il testo vero."),
         el("h2", null, "Durante la conferenza"),
         el("p", null, "Vai in «In sala» e apri «Schermo»: trascina la finestra sul proiettore e premi F. «Regia» resta sul portatile. Le due finestre devono stare nello stesso browser, sullo stesso computer. Se un relatore cambia lingua all'ultimo, nella regia c'è «Lingua sullo schermo»."),
         el("h2", null, "Comandi da tastiera"),

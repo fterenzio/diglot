@@ -98,7 +98,7 @@
       el("p", { class: "tab-lead" }, "Il nome viene dai diglot, i libri con lo stesso testo in due lingue: qui le due lingue sono quella del relatore e quella sullo schermo."),
       el("section", { class: "help" },
         el("h2", null, "Preparare una conferenza"),
-        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo e carichi la locandina: l'anteprima usa il testo vero."),
+        el("p", null, "Nel Programma scrivi giorni, sessioni e interventi. Nella pagina di ogni intervento carichi testo, slide e citazioni. L'elenco «Da sistemare» dice cosa manca ancora. In Grafica scegli colori, caratteri e logo, carichi la locandina e ne decidi dimensione e posizione: l'anteprima usa il testo vero."),
         el("h2", null, "Durante la conferenza"),
         el("p", null, "Vai in «In sala» e apri «Schermo»: trascina la finestra sul proiettore e premi F. «Regia» resta sul portatile. Le due finestre devono stare nello stesso browser, sullo stesso computer. Se un relatore cambia lingua all'ultimo, nella regia c'è «Lingua sullo schermo»."),
         el("h2", null, "Comandi da tastiera"),

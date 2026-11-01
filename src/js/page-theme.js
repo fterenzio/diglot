@@ -43,6 +43,8 @@
       sceneButtons.querySelectorAll("button").forEach((b) => { const on = b.dataset.scene === k; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
       if (frame.contentWindow) frame.contentWindow.postMessage({ diglotScene: k }, "*");
     };
+    const toCover = () => { if (scene !== "conf") showScene("conf"); };
+    const placeName = (v, start, end) => (v === 0 ? start : v === 100 ? end : v === 50 ? "al centro" : v + "%");
     const contrastLine = (p) => {
       const rows = [["Testo sul fondo", TH.contrast(p.ink, p.paper)], ["Testo secondario", TH.contrast(p.inkSoft, p.paper)], ["Accento nel testo", TH.contrast(p.accentInk, p.paper)]];
       return el("ul", { class: "contrast" }, rows.map(([t, v]) => el("li", { class: v < 4.5 ? "bad" : "" }, t + ": " + v.toFixed(1).replace(".", ",") + ":1" + (v < 4.5 ? ", poco leggibile da lontano" : ""))));
@@ -63,6 +65,7 @@
     };
 
     function draw() {
+      const pl = th.poster ? TH.posterLayout(th.poster) : null;
       panel.replaceChildren(
         group("Colori",
           el("div", { class: "presets", role: "group", "aria-label": "Combinazioni pronte" }, Object.entries(TH.PRESETS).map(([key, pr]) =>
@@ -121,8 +124,17 @@
               if (media) { Studio.snapshot(); th.coverBg = { media, dim: 0.7 }; changed(true); }
             } })),
           th.poster ? el("div", { class: "th-logo" },
-            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => { Studio.snapshot(); th.poster.show = e.target.value; changed(); showScene("conf"); } },
-              [["beside", "Accanto al titolo"], ["alone", "Da sola, a tutta altezza"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            Studio.labeled("Locandina sulla copertina", el("select", { class: "ed-select", id: "th-poster-show", onchange: (e) => {
+              Studio.snapshot();
+              th.poster.show = e.target.value;
+              delete th.poster.size; delete th.poster.x; delete th.poster.y;
+              changed(true); toCover();
+              document.getElementById("th-poster-show").focus();
+            } },
+              [["beside", "Accanto al titolo"], ["alone", "Da sola"]].map(([v, t]) => el("option", { value: v, selected: (th.poster.show || "beside") === v }, t)))),
+            Studio.labeled("Altezza della locandina: " + pl.size + "%", el("input", { type: "range", id: "th-poster-size", min: 20, max: 100, step: 1, value: pl.size, oninput: (e) => { begin(); th.poster.size = +e.target.value; e.target.previousSibling.textContent = "Altezza della locandina: " + th.poster.size + "%"; changed(); toCover(); } })),
+            Studio.labeled("Posizione orizzontale: " + placeName(pl.x, "tutta a sinistra", "tutta a destra"), el("input", { type: "range", id: "th-poster-x", min: 0, max: 100, step: 1, value: pl.x, oninput: (e) => { begin(); th.poster.x = +e.target.value; e.target.previousSibling.textContent = "Posizione orizzontale: " + placeName(th.poster.x, "tutta a sinistra", "tutta a destra"); changed(); toCover(); } }), pl.alone ? null : "Il titolo si sposta dal lato dove resta più spazio."),
+            Studio.labeled("Posizione verticale: " + placeName(pl.y, "tutta in alto", "tutta in basso"), el("input", { type: "range", id: "th-poster-y", min: 0, max: 100, step: 1, value: pl.y, oninput: (e) => { begin(); th.poster.y = +e.target.value; e.target.previousSibling.textContent = "Posizione verticale: " + placeName(th.poster.y, "tutta in alto", "tutta in basso"); changed(); toCover(); } })),
             el("button", { class: "link danger", id: "th-poster-off", onclick: () => { Studio.snapshot(); th.poster = null; posterNote.textContent = ""; changed(true); } }, "Togli la locandina"))
             : [el("label", { class: "btn file" }, "Carica la locandina", el("input", { type: "file", id: "th-poster", class: "visually-hidden", accept: ".pdf,application/pdf,image/*", onchange: async (e) => {
               const f = e.target.files[0]; e.target.value = "";
